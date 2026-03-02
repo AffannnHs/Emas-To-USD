@@ -24,7 +24,7 @@
             0% { background-color: rgba(16, 185, 129, 0.8); color: #fff; transform: scale(1.05); }
             100% { background-color: #1e3a2f; color: #34d399; transform: scale(1); }
         }
-        
+
         /* Animasi Flash Merah saat Harga Turun */
         @keyframes flashDown {
             0% { background-color: rgba(239, 68, 68, 0.8); color: #fff; transform: scale(1.05); }
@@ -78,7 +78,7 @@
 
     <!-- Bagian Header Website (Dibuat Jauh Lebih Tipis / Kompak) -->
     <header class="relative z-10 bg-[#0b0e14]/80 backdrop-blur-lg border-b border-white/5 px-3 py-1.5 flex flex-col md:flex-row justify-between items-center gap-2 shadow-[0_4px_20px_rgba(0,0,0,0.5)] min-h-[44px] transition-all duration-300">
-        
+
         <!-- Bagian Kiri: Logo AffannnHs Monitor -->
         <div class="flex items-center gap-2 w-full md:w-1/4 justify-center md:justify-start group cursor-default">
             <div class="bg-gradient-to-tr from-yellow-600 to-yellow-300 p-1 rounded-md shadow-lg group-hover:rotate-12 transition-transform duration-300">
@@ -258,7 +258,7 @@
             if (lastPriceValue !== 0 && currentPrice !== lastPriceValue) {
                 // Hapus class animasi sebelumnya jika masih ada
                 priceEl.classList.remove('flash-up', 'flash-down');
-                
+
                 // Trigger reflow agar animasi bisa diulang
                 void priceEl.offsetWidth; 
 
@@ -291,7 +291,7 @@
         function switchAsset(assetKey) {
             currentAsset = assetKey;
             const asset = assets[assetKey];
-            
+
             // Animasi & Warna Tombol Modern (Lebih kecil)
             const activeClassXAU = "px-3 py-0.5 rounded-md bg-gradient-to-r from-yellow-600 to-yellow-500 text-white text-[10px] md:text-[11px] font-bold transition-all duration-300 shadow-md transform hover:scale-105 active:scale-95 whitespace-nowrap";
             const activeClassBTC = "px-3 py-0.5 rounded-md bg-gradient-to-r from-orange-600 to-orange-500 text-white text-[10px] md:text-[11px] font-bold transition-all duration-300 shadow-md transform hover:scale-105 active:scale-95 whitespace-nowrap";
@@ -324,9 +324,9 @@
                 "hide_top_toolbar": false,
                 "hide_legend": false,
                 "save_image": false,
+                "hide_volume": true, // <--- INI KUNCI UNTUK MENGHAPUS BATANG VOLUME DI BAWAH
                 "container_id": "tradingview_chart",
-                "toolbar_bg": "#0b0e14",
-                "studies": [ "Volume@tv-basicstudies" ]
+                "toolbar_bg": "#0b0e14"
             });
         }
 
@@ -337,3 +337,5 @@
     </script>
 </body>
 </html>
+
+
