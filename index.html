@@ -2,6 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
+    <!-- KUNCI ZOOM DAN SKALA DI HP -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AffannnHs Monitor - Live Streaming Chart</title>
     <!-- Memuat Tailwind CSS untuk styling layout -->
@@ -9,7 +10,7 @@
     <!-- Script Utama TradingView Chart -->
     <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     <style>
-        /* MENGUNCI LAYAR MATI-MATIAN AGAR TIDAK BISA DIGESER (SCROLL) */
+        /* MENGUNCI LAYAR MATI-MATIAN AGAR TIDAK BISA DIGESER (SCROLL) SAMA SEKALI */
         html, body {
             height: 100dvh; /* Menggunakan dvh agar akurat di browser HP */
             width: 100vw;
@@ -22,6 +23,7 @@
             top: 0; left: 0; right: 0; bottom: 0;
             overscroll-behavior: none; /* Mencegah efek pull-to-refresh di HP */
             font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            touch-action: none; /* Melarang aksi sentuh bawaan browser seperti swipe-back */
         }
 
         /* Animasi Flash Hijau saat Harga Naik */
@@ -109,13 +111,13 @@
                 </div>
 
                 <!-- TOMBOL FULLSCREEN -->
-                <button onclick="toggleFullScreen()" class="bg-black/40 hover:bg-white/10 text-[#787b86] hover:text-white p-1 rounded-md border border-white/10 transition-all duration-300 flex items-center justify-center shadow-inner" title="Layar Penuh">
+                <button onclick="toggleFullScreen()" class="bg-black/40 hover:bg-white/10 text-white p-1 rounded-md border border-white/20 transition-all duration-300 flex items-center justify-center shadow-[0_0_10px_rgba(255,255,255,0.1)]" title="Layar Penuh">
                     <!-- Icon Masuk Fullscreen -->
-                    <svg id="fs-icon-enter" xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg id="fs-icon-enter" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
                     </svg>
                     <!-- Icon Keluar Fullscreen -->
-                    <svg id="fs-icon-exit" xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg id="fs-icon-exit" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 hidden text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20v-6h-6m6 0l-5 5m11-5h6v6m-6-6l5 5M9 4v6H3m6 0L4 5m11 5h6V4m-6 6l5-5" />
                     </svg>
                 </button>
@@ -133,14 +135,14 @@
         </div>
     </header>
 
-    <!-- Area Utama untuk Chart -->
-    <main class="flex-grow relative bg-[#0b0e14] w-full">
+    <!-- Area Utama untuk Chart (Kunci Mati) -->
+    <main class="flex-grow relative bg-[#0b0e14] w-full overflow-hidden">
         <div class="absolute inset-0 w-full h-full">
             <div id="tradingview_chart" class="h-full w-full"></div>
         </div>
     </main>
 
-    <!-- Bagian Footer (Lebih Tipis) -->
+    <!-- Bagian Footer -->
     <footer class="relative z-10 border-t border-white/5 py-1.5 px-3 flex justify-between items-center text-[9px] md:text-[10px] bg-[#0b0e14]/90 backdrop-blur-md">
         <p class="text-[#787b86] font-medium tracking-wide">
             Design & Engine <span class="bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 to-orange-500 font-extrabold tracking-widest animate-pulse ml-1 text-glow">By AffannnHs</span>
@@ -156,14 +158,16 @@
     <!-- Script Logika -->
     <script type="text/javascript">
         // ==========================================
-        // FITUR FULLSCREEN
+        // FITUR FULLSCREEN (DI HP & LAPTOP)
         // ==========================================
         function toggleFullScreen() {
             if (!document.fullscreenElement) {
+                // Masuk mode Fullscreen
                 document.documentElement.requestFullscreen().catch(err => {
-                    alert(`Error: Tidak bisa masuk mode layar penuh (${err.message})`);
+                    console.warn(`Error masuk fullscreen: ${err.message}`);
                 });
             } else {
+                // Keluar mode Fullscreen
                 if (document.exitFullscreen) {
                     document.exitFullscreen();
                 }
@@ -323,7 +327,7 @@
 
             initSuperRealtimeData(assetKey);
 
-            // RENDER ULANG CHART
+            // RENDER ULANG CHART DENGAN PENGATURAN PEMBASMI VOLUME
             new TradingView.widget({
                 "autosize": true,
                 "symbol": asset.symbolTV,
@@ -339,10 +343,13 @@
                 "hide_legend": false,
                 "save_image": false,
                 
-                // MENGHAPUS VOLUME SECARA PAKSA (EXTREME MODE)
-                "hide_volume": true,
-                "studies": [], // Memaksa tidak ada indikator yang dimuat
-                
+                // --- INI ADALAH KODE RAHASIA UNTUK MEMBASMI VOLUME ---
+                "disabled_features": [
+                    "create_volume_indicator_by_default", // Melarang Tradingview membuat volume secara otomatis
+                    "volume_force_overlay"               // Melarang volume dipaksakan menumpuk di atas chart
+                ],
+                // -----------------------------------------------------
+
                 "container_id": "tradingview_chart",
                 "toolbar_bg": "#0b0e14"
             });
@@ -355,5 +362,3 @@
     </script>
 </body>
 </html>
-
-
