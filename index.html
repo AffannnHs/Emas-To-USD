@@ -12,18 +12,18 @@
     <style>
         /* MENGUNCI LAYAR MATI-MATIAN AGAR TIDAK BISA DIGESER (SCROLL) SAMA SEKALI */
         html, body {
-            height: 100dvh; /* Menggunakan dvh agar akurat di browser HP */
+            height: 100dvh; 
             width: 100vw;
             margin: 0;
             padding: 0;
-            background-color: #0b0e14; /* Warna latar belakang modern */
-            color: #d1d4dc; /* Warna teks terang */
-            overflow: hidden !important; /* Mencegah scroll pada body utama */
-            position: fixed; /* Kunci posisi absolut di layar */
+            background-color: #0b0e14; 
+            color: #d1d4dc; 
+            overflow: hidden !important; 
+            position: fixed; 
             top: 0; left: 0; right: 0; bottom: 0;
-            overscroll-behavior: none; /* Mencegah efek pull-to-refresh di HP */
+            overscroll-behavior: none; 
             font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            touch-action: none; /* Melarang aksi sentuh bawaan browser seperti swipe-back */
+            touch-action: none; 
         }
 
         /* Animasi Flash Hijau saat Harga Naik */
@@ -41,14 +41,19 @@
         .flash-up { animation: flashUp 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
         .flash-down { animation: flashDown 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
 
-        /* Styling scrollbar untuk tampilan yang lebih rapi */
+        /* Styling scrollbar */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #0b0e14; }
         ::-webkit-scrollbar-thumb { background: #2a2e39; border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: #434651; }
 
-        /* Efek Glow untuk Teks Header */
+        /* Efek Glow */
         .text-glow { text-shadow: 0 0 12px rgba(234, 179, 8, 0.6); }
+        
+        /* Loading Overlay saat Reconnect */
+        #reconnect-overlay {
+            transition: opacity 0.3s ease;
+        }
     </style>
 </head>
 <body class="flex flex-col h-screen relative">
@@ -62,8 +67,14 @@
         </div>
         <div>
             <p class="font-bold text-xs tracking-wide">Koneksi Terputus!</p>
-            <p class="text-[10px] text-red-100 opacity-80">Mencoba menyambung kembali...</p>
+            <p class="text-[10px] text-red-100 opacity-80">Menunggu sinyal internet...</p>
         </div>
+    </div>
+
+    <!-- OVERLAY LOADING SAAT RECONNECT DIAM-DIAM -->
+    <div id="reconnect-overlay" class="fixed inset-0 bg-[#0b0e14]/80 backdrop-blur-sm z-40 flex flex-col justify-center items-center opacity-0 pointer-events-none">
+        <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-yellow-500 mb-3"></div>
+        <p class="text-yellow-400 font-bold tracking-widest text-sm animate-pulse">MEMULIHKAN DATA TERBARU...</p>
     </div>
 
     <!-- Bagian Header Website -->
@@ -112,11 +123,9 @@
 
                 <!-- TOMBOL FULLSCREEN -->
                 <button onclick="toggleFullScreen()" class="bg-black/40 hover:bg-white/10 text-white p-1 rounded-md border border-white/20 transition-all duration-300 flex items-center justify-center shadow-[0_0_10px_rgba(255,255,255,0.1)]" title="Layar Penuh">
-                    <!-- Icon Masuk Fullscreen -->
                     <svg id="fs-icon-enter" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
                     </svg>
-                    <!-- Icon Keluar Fullscreen -->
                     <svg id="fs-icon-exit" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 hidden text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20v-6h-6m6 0l-5 5m11-5h6v6m-6-6l5 5M9 4v6H3m6 0L4 5m11 5h6V4m-6 6l5-5" />
                     </svg>
@@ -158,23 +167,20 @@
     <!-- Script Logika -->
     <script type="text/javascript">
         // ==========================================
-        // FITUR FULLSCREEN (DI HP & LAPTOP)
+        // FITUR FULLSCREEN
         // ==========================================
         function toggleFullScreen() {
             if (!document.fullscreenElement) {
-                // Masuk mode Fullscreen
                 document.documentElement.requestFullscreen().catch(err => {
                     console.warn(`Error masuk fullscreen: ${err.message}`);
                 });
             } else {
-                // Keluar mode Fullscreen
                 if (document.exitFullscreen) {
                     document.exitFullscreen();
                 }
             }
         }
 
-        // Listener untuk merubah icon fullscreen saat layarnya berubah
         document.addEventListener('fullscreenchange', () => {
             const iconEnter = document.getElementById('fs-icon-enter');
             const iconExit = document.getElementById('fs-icon-exit');
@@ -188,31 +194,64 @@
         });
 
         // ==========================================
-        // FITUR DETEKSI KONEKSI INTERNET
+        // FITUR RECONNECT & DETEKSI KONEKSI
         // ==========================================
         const offlinePopup = document.getElementById('offline-popup');
+        const reconnectOverlay = document.getElementById('reconnect-overlay');
         const connDotPing = document.getElementById('conn-dot-ping');
         const connDot = document.getElementById('conn-dot');
         const connText = document.getElementById('conn-text');
+        
+        let isReconnecting = false;
+
+        function handleAutoReconnect() {
+            if (isReconnecting) return;
+            isReconnecting = true;
+            
+            // Tampilkan UI Menyambung Ulang
+            connText.innerText = 'Memulihkan Data...';
+            connDot.classList.replace('bg-emerald-500', 'bg-yellow-500');
+            connDot.classList.replace('bg-red-500', 'bg-yellow-500');
+            connDot.classList.replace('shadow-[0_0_8px_#ef4444]', 'shadow-[0_0_8px_#eab308]');
+            reconnectOverlay.classList.remove('opacity-0', 'pointer-events-none');
+            reconnectOverlay.classList.add('opacity-100');
+
+            // Beri jeda 1.5 detik agar sinyal HP benar-benar stabil sebelum menarik data
+            setTimeout(() => {
+                switchAsset(currentAsset); // RESTART TOTAL CHART & TICKER TANPA RELOAD HALAMAN
+                
+                // Kembalikan UI ke Online
+                connDot.classList.replace('bg-yellow-500', 'bg-emerald-500');
+                connDot.classList.replace('shadow-[0_0_8px_#eab308]', 'shadow-[0_0_8px_#10b981]');
+                connText.innerText = 'Live Socket Aktif';
+                reconnectOverlay.classList.remove('opacity-100');
+                reconnectOverlay.classList.add('opacity-0', 'pointer-events-none');
+                
+                isReconnecting = false;
+            }, 1500);
+        }
 
         function updateConnectionStatus() {
             if (navigator.onLine) {
                 offlinePopup.classList.add('opacity-0', 'pointer-events-none', '-translate-y-8');
                 offlinePopup.classList.remove('opacity-100', 'translate-y-0');
                 connDotPing.classList.remove('hidden');
-                connDot.classList.replace('bg-red-500', 'bg-emerald-500');
-                connDot.classList.replace('shadow-[0_0_8px_#ef4444]', 'shadow-[0_0_8px_#10b981]');
-                connText.innerText = 'Live Socket Aktif';
-                if(currentAsset) initSuperRealtimeData(currentAsset); 
+                
+                // PANGGIL SISTEM PEMULIHAN OTOMATIS
+                handleAutoReconnect();
+                
             } else {
                 offlinePopup.classList.remove('opacity-0', 'pointer-events-none', '-translate-y-8');
                 offlinePopup.classList.add('opacity-100', 'translate-y-0');
                 connDotPing.classList.add('hidden'); 
                 connDot.classList.replace('bg-emerald-500', 'bg-red-500');
+                connDot.classList.replace('bg-yellow-500', 'bg-red-500');
                 connDot.classList.replace('shadow-[0_0_8px_#10b981]', 'shadow-[0_0_8px_#ef4444]');
+                connDot.classList.replace('shadow-[0_0_8px_#eab308]', 'shadow-[0_0_8px_#ef4444]');
                 connText.innerText = 'Koneksi Terputus';
             }
         }
+        
         window.addEventListener('online', updateConnectionStatus);
         window.addEventListener('offline', updateConnectionStatus);
 
@@ -227,8 +266,11 @@
 
         async function fetchInstantData(assetKey) {
             if (!navigator.onLine) return;
+            
+            // Tambahan param _t (timestamp) untuk MENGAKALI CACHE BROWSER agar selalu dapat harga TEPAT SAAT INI
+            const timeCacheBuster = new Date().getTime(); 
             const binanceSymbol = assetKey === 'XAU' ? 'PAXGUSDT' : 'BTCUSDT';
-            const binanceUrl = `https://data-api.binance.vision/api/v3/ticker/24hr?symbol=${binanceSymbol}`;
+            const binanceUrl = `https://data-api.binance.vision/api/v3/ticker/24hr?symbol=${binanceSymbol}&_t=${timeCacheBuster}`;
 
             try {
                 const response = await fetch(binanceUrl);
@@ -237,7 +279,7 @@
             } catch (error) {
                 const krakenPair = assetKey === 'XAU' ? 'PAXGUSD' : 'XBTUSD';
                 try {
-                    const kRes = await fetch(`https://api.kraken.com/0/public/Ticker?pair=${krakenPair}`);
+                    const kRes = await fetch(`https://api.kraken.com/0/public/Ticker?pair=${krakenPair}&_t=${timeCacheBuster}`);
                     const kData = await kRes.json();
                     const key = Object.keys(kData.result)[0];
                     const ticker = kData.result[key];
@@ -266,7 +308,7 @@
             };
 
             liveSocket.onclose = function() {
-                if (!isIntentionalClose) {
+                if (!isIntentionalClose && navigator.onLine) {
                     connText.innerText = 'Mode Fast Polling';
                     pollingInterval = setInterval(() => { fetchInstantData(currentAsset); }, 1000);
                 }
@@ -327,7 +369,10 @@
 
             initSuperRealtimeData(assetKey);
 
-            // RENDER ULANG CHART DENGAN PENGATURAN PEMBASMI VOLUME
+            // RENDER ULANG CHART (MEMAKSA TRADINGVIEW MENARIK DATA TERBARU)
+            // Area div chart dikosongkan dulu agar benar-benar bersih
+            document.getElementById('tradingview_chart').innerHTML = '';
+            
             new TradingView.widget({
                 "autosize": true,
                 "symbol": asset.symbolTV,
@@ -342,23 +387,25 @@
                 "hide_top_toolbar": false,
                 "hide_legend": false,
                 "save_image": false,
-                
-                // --- INI ADALAH KODE RAHASIA UNTUK MEMBASMI VOLUME ---
                 "disabled_features": [
-                    "create_volume_indicator_by_default", // Melarang Tradingview membuat volume secara otomatis
-                    "volume_force_overlay"               // Melarang volume dipaksakan menumpuk di atas chart
+                    "create_volume_indicator_by_default", 
+                    "volume_force_overlay"               
                 ],
-                // -----------------------------------------------------
-
                 "container_id": "tradingview_chart",
                 "toolbar_bg": "#0b0e14"
             });
         }
 
         window.addEventListener('DOMContentLoaded', () => {
-            updateConnectionStatus();
-            switchAsset('XAU');
+            // Cek status internet pertama kali
+            if(navigator.onLine) {
+                switchAsset('XAU');
+            } else {
+                updateConnectionStatus();
+            }
         });
     </script>
 </body>
 </html>
+
+
