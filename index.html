@@ -5,7 +5,7 @@
     <!-- KUNCI ZOOM DAN SKALA DI HP -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AffannnHs Monitor - Live Streaming Chart</title>
-    <!-- Memuat Tailwind CSS untuk styling layout -->
+    <!-- Memuat Tailwind CSS untuk styling layout super responsif -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Script Utama TradingView Chart -->
     <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
@@ -28,14 +28,14 @@
 
         /* Animasi Flash Hijau saat Harga Naik */
         @keyframes flashUp {
-            0% { background-color: rgba(16, 185, 129, 0.8); color: #fff; transform: scale(1.05); }
-            100% { background-color: #1e3a2f; color: #34d399; transform: scale(1); }
+            0% { background-color: rgba(16, 185, 129, 0.9); color: #fff; transform: scale(1.05); }
+            100% { background-color: rgba(16, 185, 129, 0.15); color: #34d399; transform: scale(1); }
         }
 
         /* Animasi Flash Merah saat Harga Turun */
         @keyframes flashDown {
-            0% { background-color: rgba(239, 68, 68, 0.8); color: #fff; transform: scale(1.05); }
-            100% { background-color: #3a1e1e; color: #f87171; transform: scale(1); }
+            0% { background-color: rgba(239, 68, 68, 0.9); color: #fff; transform: scale(1.05); }
+            100% { background-color: rgba(239, 68, 68, 0.15); color: #f87171; transform: scale(1); }
         }
 
         .flash-up { animation: flashUp 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
@@ -48,131 +48,213 @@
         ::-webkit-scrollbar-thumb:hover { background: #434651; }
 
         /* Efek Glow */
-        .text-glow { text-shadow: 0 0 12px rgba(234, 179, 8, 0.6); }
+        .text-glow { text-shadow: 0 0 15px rgba(234, 179, 8, 0.8); }
         
-        /* Loading Overlay saat Reconnect */
-        #reconnect-overlay {
-            transition: opacity 0.3s ease;
-        }
+        /* Transisi Overlay */
+        #reconnect-overlay, #market-closed-overlay { transition: opacity 0.4s ease; }
     </style>
 </head>
 <body class="flex flex-col h-screen relative">
 
     <!-- POPUP PERINGATAN INTERNET TERPUTUS -->
-    <div id="offline-popup" class="fixed top-16 left-1/2 transform -translate-x-1/2 bg-red-600/90 backdrop-blur-md text-white px-5 py-2.5 rounded-xl shadow-[0_10px_30px_rgba(220,38,38,0.4)] z-50 flex items-center gap-3 transition-all duration-500 opacity-0 pointer-events-none -translate-y-8 border border-red-400/50">
-        <div class="bg-red-500 p-1.5 rounded-full animate-pulse">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+    <div id="offline-popup" class="fixed top-16 left-1/2 transform -translate-x-1/2 bg-red-600/90 backdrop-blur-md text-white px-5 py-3 md:px-6 md:py-4 2xl:px-10 2xl:py-6 rounded-xl shadow-[0_10px_30px_rgba(220,38,38,0.5)] z-50 flex items-center gap-3 md:gap-4 2xl:gap-6 transition-all duration-500 opacity-0 pointer-events-none -translate-y-8 border border-red-400/50">
+        <div class="bg-red-500 p-2 2xl:p-4 rounded-full animate-pulse">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 md:h-6 md:w-6 2xl:h-10 2xl:w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 5.636a9 9 0 010 12.728m0 0l-2.829-2.829m2.829 2.829L21 21M15.536 8.464a5 5 0 010 7.072m0 0l-2.829-2.829m-4.243 2.829a4.978 4.978 0 01-1.414-2.83m-1.414 5.658a9 9 0 01-2.167-9.238m7.824 2.167a1 1 0 111.414 1.414m-1.414-1.414L3 3m8.293 8.293l1.414 1.414" />
             </svg>
         </div>
         <div>
-            <p class="font-bold text-xs tracking-wide">Koneksi Terputus!</p>
-            <p class="text-[10px] text-red-100 opacity-80">Menunggu sinyal internet...</p>
+            <p class="font-bold text-sm md:text-base 2xl:text-2xl tracking-wide">Koneksi Terputus!</p>
+            <p class="text-xs md:text-sm 2xl:text-xl text-red-100 opacity-80 mt-1">Menunggu sinyal internet...</p>
         </div>
     </div>
 
     <!-- OVERLAY LOADING SAAT RECONNECT DIAM-DIAM -->
-    <div id="reconnect-overlay" class="fixed inset-0 bg-[#0b0e14]/80 backdrop-blur-sm z-40 flex flex-col justify-center items-center opacity-0 pointer-events-none">
-        <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-yellow-500 mb-3"></div>
-        <p class="text-yellow-400 font-bold tracking-widest text-sm animate-pulse">MEMULIHKAN DATA TERBARU...</p>
+    <div id="reconnect-overlay" class="fixed inset-0 bg-[#0b0e14]/85 backdrop-blur-sm z-40 flex flex-col justify-center items-center opacity-0 pointer-events-none">
+        <div class="animate-spin rounded-full h-12 w-12 md:h-16 md:w-16 2xl:h-24 2xl:w-24 border-t-4 border-b-4 border-yellow-500 mb-4 2xl:mb-8 shadow-[0_0_20px_rgba(234,179,8,0.5)]"></div>
+        <p class="text-yellow-400 font-extrabold tracking-[0.2em] text-sm md:text-base 2xl:text-2xl animate-pulse">MEMULIHKAN DATA TERBARU...</p>
     </div>
 
-    <!-- Bagian Header Website -->
-    <header class="relative z-10 bg-[#0b0e14]/80 backdrop-blur-lg border-b border-white/5 px-3 py-1.5 flex flex-col md:flex-row justify-between items-center gap-2 shadow-[0_4px_20px_rgba(0,0,0,0.5)] min-h-[44px] transition-all duration-300">
+    <!-- OVERLAY PASAR TUTUP (MARKET CLOSED) -->
+    <div id="market-closed-overlay" class="fixed inset-0 bg-[#0b0e14]/70 backdrop-blur-sm z-30 flex flex-col justify-center items-center opacity-0 pointer-events-none pt-12 md:pt-16">
+        <div class="bg-orange-900/40 border border-orange-500/50 p-5 md:p-8 2xl:p-12 rounded-2xl flex flex-col items-center text-center max-w-[90%] md:max-w-md mx-4 shadow-[0_0_40px_rgba(249,115,22,0.15)]">
+            <div class="bg-orange-500/20 p-3 md:p-4 2xl:p-6 rounded-full mb-3 md:mb-5">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 md:h-14 md:w-14 2xl:h-20 2xl:w-20 text-orange-400 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+            <h2 class="text-orange-400 font-extrabold text-lg md:text-2xl 2xl:text-4xl mb-2 tracking-widest uppercase">Pasar Sedang Tutup</h2>
+            <p class="text-slate-300 text-xs md:text-sm 2xl:text-xl mb-4 md:mb-6 2xl:mb-8 opacity-90 leading-relaxed">
+                Perdagangan Emas (XAU) saat ini sedang dalam jadwal istirahat rutin atau libur akhir pekan. Harga tidak akan bergerak.
+            </p>
+            <div class="bg-[#0b0e14]/80 px-4 py-3 md:px-6 md:py-4 2xl:px-8 2xl:py-6 rounded-xl border border-white/5 w-full shadow-inner">
+                <p class="text-slate-400 text-[10px] md:text-xs 2xl:text-lg uppercase tracking-[0.2em] mb-1.5 md:mb-2">Akan Buka Kembali Pada:</p>
+                <p id="market-open-time" class="text-yellow-400 font-black text-base md:text-xl 2xl:text-3xl drop-shadow-[0_0_8px_rgba(234,179,8,0.5)]">--</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- HEADER WEBSITE RESPONSIF -->
+    <header class="relative z-10 bg-[#0b0e14]/80 backdrop-blur-lg border-b border-white/5 px-2 py-1.5 md:px-4 md:py-2.5 2xl:px-8 2xl:py-5 flex flex-col sm:flex-row justify-between items-center gap-2 sm:gap-4 shadow-[0_4px_20px_rgba(0,0,0,0.5)] min-h-[44px] md:min-h-[60px] 2xl:min-h-[100px] transition-all duration-300">
 
         <!-- Bagian Kiri: Logo AffannnHs Monitor -->
-        <div class="flex items-center gap-2 w-full md:w-1/4 justify-center md:justify-start group cursor-default">
-            <div class="bg-gradient-to-tr from-yellow-600 to-yellow-300 p-1 rounded-md shadow-lg group-hover:rotate-12 transition-transform duration-300">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-[#0b0e14]" viewBox="0 0 24 24" fill="currentColor">
+        <div class="flex items-center gap-2 md:gap-3 2xl:gap-5 w-full sm:w-auto justify-center sm:justify-start group cursor-default">
+            <div class="bg-gradient-to-tr from-yellow-600 to-yellow-300 p-1 md:p-1.5 2xl:p-3 rounded-md shadow-[0_0_10px_rgba(234,179,8,0.4)] group-hover:rotate-12 transition-transform duration-300">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 md:h-5 md:w-5 2xl:h-8 2xl:w-8 text-[#0b0e14]" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
                 </svg>
             </div>
-            <h1 class="text-sm md:text-base font-extrabold tracking-wider text-white whitespace-nowrap">
+            <h1 class="text-sm md:text-lg 2xl:text-3xl font-extrabold tracking-wider text-white whitespace-nowrap">
                 AffannnHs <span class="bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 to-yellow-200 text-glow">Monitor</span>
             </h1>
         </div>
 
         <!-- Bagian Tengah: CUSTOM TICKER -->
-        <div class="w-full md:w-1/2 flex justify-center items-center h-[30px]">
-            <div class="flex items-center gap-2.5 font-bold tracking-tight bg-white/5 px-3 py-1 rounded-xl border border-white/5 shadow-inner backdrop-blur-sm">
+        <div class="w-full sm:w-auto flex justify-center items-center">
+            <div class="flex items-center gap-2 md:gap-3 2xl:gap-5 font-bold tracking-tight bg-white/[0.03] px-3 py-1 md:px-4 md:py-1.5 2xl:px-8 2xl:py-4 rounded-xl border border-white/5 shadow-inner backdrop-blur-sm">
                 <!-- Nama Simbol -->
-                <span id="custom-ticker-symbol" class="text-white drop-shadow-md text-sm md:text-base">XAU/USD</span>
+                <span id="custom-ticker-symbol" class="text-white drop-shadow-md text-sm md:text-base 2xl:text-2xl">XAU/USD</span>
                 <!-- Kotak Harga -->
-                <span id="custom-ticker-price" class="bg-[#1e222d] text-slate-300 px-2 py-0.5 rounded-md min-w-[85px] text-center transition-all duration-300 border border-white/5 shadow-sm text-sm">
+                <span id="custom-ticker-price" class="bg-[rgba(239,68,68,0.15)] text-red-400 px-2 py-0.5 md:px-3 md:py-1 2xl:px-5 2xl:py-2 rounded-md 2xl:rounded-xl min-w-[85px] md:min-w-[100px] 2xl:min-w-[160px] text-center transition-all duration-300 border border-red-900/50 shadow-sm text-sm md:text-base 2xl:text-2xl">
                     <span class="animate-pulse">Memuat...</span>
                 </span>
                 <!-- Perubahan & Persentase -->
-                <span id="custom-ticker-change" class="text-slate-400 font-semibold text-xs md:text-sm whitespace-nowrap transition-colors duration-300">
+                <span id="custom-ticker-change" class="text-slate-400 font-semibold text-xs md:text-sm 2xl:text-xl whitespace-nowrap transition-colors duration-300">
                     --
                 </span>
             </div>
         </div>
 
         <!-- Bagian Kanan: Tombol Switcher, Koneksi & FULLSCREEN -->
-        <div class="flex flex-col items-center md:items-end gap-1.5 w-full md:w-1/4">
+        <div class="flex flex-col sm:flex-row items-center gap-1.5 md:gap-3 2xl:gap-6 w-full sm:w-auto justify-center sm:justify-end">
             
-            <div class="flex items-center gap-2">
-                <!-- Status Koneksi -->
-                <div class="text-[9px] uppercase tracking-widest font-bold text-[#787b86] flex items-center gap-1.5 whitespace-nowrap transition-colors duration-300 bg-black/20 px-2 py-0.5 rounded-full border border-white/5" id="conn-text-container">
-                    <span class="relative flex h-1.5 w-1.5">
+            <div class="flex items-center gap-1.5 md:gap-3 2xl:gap-5">
+                <!-- Status Koneksi & Pasar -->
+                <div class="text-[9px] md:text-xs 2xl:text-lg uppercase tracking-widest font-bold text-[#787b86] flex items-center gap-1.5 2xl:gap-3 whitespace-nowrap transition-colors duration-300 bg-black/20 px-2 py-0.5 md:px-3 md:py-1 2xl:px-5 2xl:py-2 rounded-full border border-white/5" id="conn-text-container">
+                    <span class="relative flex h-1.5 w-1.5 md:h-2 md:w-2 2xl:h-4 2xl:w-4" id="conn-dot-wrapper">
                       <span id="conn-dot-ping" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                      <span id="conn-dot" class="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500 shadow-[0_0_8px_#10b981]"></span>
+                      <span id="conn-dot" class="relative inline-flex rounded-full h-1.5 w-1.5 md:h-2 md:w-2 2xl:h-4 2xl:w-4 bg-emerald-500 shadow-[0_0_8px_#10b981]"></span>
                     </span>
                     <span id="conn-text">Live Socket Aktif</span>
                 </div>
 
                 <!-- TOMBOL FULLSCREEN -->
-                <button onclick="toggleFullScreen()" class="bg-black/40 hover:bg-white/10 text-white p-1 rounded-md border border-white/20 transition-all duration-300 flex items-center justify-center shadow-[0_0_10px_rgba(255,255,255,0.1)]" title="Layar Penuh">
-                    <svg id="fs-icon-enter" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <button onclick="toggleFullScreen()" class="bg-black/40 hover:bg-white/10 text-white p-1 md:p-1.5 2xl:p-3 rounded-md border border-white/20 transition-all duration-300 flex items-center justify-center shadow-[0_0_10px_rgba(255,255,255,0.1)] group" title="Layar Penuh">
+                    <svg id="fs-icon-enter" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 md:h-5 md:w-5 2xl:h-8 2xl:w-8 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
                     </svg>
-                    <svg id="fs-icon-exit" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 hidden text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg id="fs-icon-exit" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 md:h-5 md:w-5 2xl:h-8 2xl:w-8 hidden text-yellow-400 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20v-6h-6m6 0l-5 5m11-5h6v6m-6-6l5 5M9 4v6H3m6 0L4 5m11 5h6V4m-6 6l5-5" />
                     </svg>
                 </button>
             </div>
 
             <!-- Tombol Switcher Interaktif -->
-            <div class="flex bg-black/40 rounded-lg p-0.5 border border-white/10 backdrop-blur-md shadow-inner">
-                <button id="btn-XAU" onclick="switchAsset('XAU')" class="px-3 py-0.5 rounded-md bg-gradient-to-r from-yellow-600 to-yellow-500 text-white text-[10px] md:text-[11px] font-bold transition-all duration-300 shadow-md transform hover:scale-105 active:scale-95 whitespace-nowrap">
+            <div class="flex bg-black/40 rounded-lg p-0.5 md:p-1 2xl:p-2 border border-white/10 backdrop-blur-md shadow-inner">
+                <button id="btn-XAU" onclick="switchAsset('XAU')" class="px-3 py-0.5 md:px-4 md:py-1.5 2xl:px-8 2xl:py-3 rounded-md 2xl:rounded-lg bg-gradient-to-r from-yellow-600 to-yellow-500 text-white text-[10px] md:text-sm 2xl:text-xl font-bold transition-all duration-300 shadow-md transform hover:scale-105 active:scale-95 whitespace-nowrap">
                     XAU (Emas)
                 </button>
-                <button id="btn-BTC" onclick="switchAsset('BTC')" class="px-3 py-0.5 rounded-md text-[#787b86] hover:text-white text-[10px] md:text-[11px] font-bold transition-all duration-300 transform hover:bg-white/5 hover:scale-105 active:scale-95 whitespace-nowrap">
+                <button id="btn-BTC" onclick="switchAsset('BTC')" class="px-3 py-0.5 md:px-4 md:py-1.5 2xl:px-8 2xl:py-3 rounded-md 2xl:rounded-lg text-[#787b86] hover:text-white text-[10px] md:text-sm 2xl:text-xl font-bold transition-all duration-300 transform hover:bg-white/5 hover:scale-105 active:scale-95 whitespace-nowrap">
                     BTC (Bitcoin)
                 </button>
             </div>
         </div>
     </header>
 
-    <!-- Area Utama untuk Chart (Kunci Mati) -->
+    <!-- Area Utama untuk Chart (Kunci Mati, Overflow Hidden) -->
     <main class="flex-grow relative bg-[#0b0e14] w-full overflow-hidden">
         <div class="absolute inset-0 w-full h-full">
             <div id="tradingview_chart" class="h-full w-full"></div>
         </div>
     </main>
 
-    <!-- Bagian Footer -->
-    <footer class="relative z-10 border-t border-white/5 py-1.5 px-3 flex justify-between items-center text-[9px] md:text-[10px] bg-[#0b0e14]/90 backdrop-blur-md">
+    <!-- Bagian Footer Responsif -->
+    <footer class="relative z-10 border-t border-white/5 py-1.5 md:py-2 2xl:py-4 px-3 md:px-6 2xl:px-10 flex justify-between items-center text-[9px] md:text-xs 2xl:text-lg bg-[#0b0e14]/90 backdrop-blur-md">
         <p class="text-[#787b86] font-medium tracking-wide">
             Design & Engine <span class="bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 to-orange-500 font-extrabold tracking-widest animate-pulse ml-1 text-glow">By AffannnHs</span>
         </p>
-        <p class="text-[#787b86]/70 flex items-center gap-1 font-medium">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <p class="text-[#787b86]/70 flex items-center gap-1 2xl:gap-2 font-medium">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 md:h-4 md:w-4 2xl:h-6 2xl:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
             Powered by TradingView
         </p>
     </footer>
 
-    <!-- Script Logika -->
+    <!-- Script Logika Utama -->
     <script type="text/javascript">
         // ==========================================
-        // FITUR FULLSCREEN
+        // 1. FITUR CEK JADWAL PASAR TUTUP (MARKET HOURS)
+        // ==========================================
+        const marketClosedOverlay = document.getElementById('market-closed-overlay');
+        const marketOpenTimeText = document.getElementById('market-open-time');
+        let marketCheckInterval = null;
+
+        function checkMarketStatus() {
+            // Jika yang dibuka BTC, pasar selalu buka 24/7. Sembunyikan popup.
+            if (currentAsset !== 'XAU') {
+                marketClosedOverlay.classList.remove('opacity-100', 'pointer-events-auto');
+                marketClosedOverlay.classList.add('opacity-0', 'pointer-events-none');
+                
+                // Pastikan teks header kembali ke Live Socket
+                if (navigator.onLine) {
+                    document.getElementById('conn-text').innerText = 'Live Socket Aktif';
+                    document.getElementById('conn-dot').classList.replace('bg-orange-500', 'bg-emerald-500');
+                    document.getElementById('conn-dot').classList.replace('shadow-[0_0_8px_#f97316]', 'shadow-[0_0_8px_#10b981]');
+                }
+                return;
+            }
+
+            // Dapatkan waktu saat ini dalam zona waktu UTC (untuk hindari error zona waktu HP pengguna)
+            const now = new Date();
+            const utcDay = now.getUTCDay();   // 0=Minggu, 1=Senin, ..., 6=Sabtu
+            const utcHour = now.getUTCHours(); // 0-23
+
+            let isClosed = false;
+            let openTimeStr = "";
+
+            // LOGIKA PASAR EMAS (Berdasarkan Jam Internasional UTC)
+            // 1. Tutup Akhir Pekan (Jumat 22:00 UTC s/d Minggu 23:00 UTC) -> Setara Sabtu 05:00 WIB s/d Senin 06:00 WIB
+            if ((utcDay === 5 && utcHour >= 22) || (utcDay === 6) || (utcDay === 0 && utcHour < 23)) {
+                isClosed = true;
+                openTimeStr = "Senin, Pukul 06:00 WIB";
+            }
+            // 2. Tutup Istirahat Harian (Senin - Kamis, jam 22:00 UTC) -> Setara Selasa - Jumat, jam 05:00 - 06:00 WIB
+            else if (utcDay >= 1 && utcDay <= 4 && utcHour === 22) {
+                isClosed = true;
+                openTimeStr = "Hari ini, Pukul 06:00 WIB";
+            }
+
+            // Tampilkan atau Sembunyikan Popup
+            if (isClosed) {
+                marketOpenTimeText.innerText = openTimeStr;
+                marketClosedOverlay.classList.remove('opacity-0', 'pointer-events-none');
+                marketClosedOverlay.classList.add('opacity-100', 'pointer-events-auto');
+                
+                // Ubah status header menjadi Pasar Tutup
+                document.getElementById('conn-text').innerText = 'Pasar Tutup';
+                document.getElementById('conn-dot').classList.replace('bg-emerald-500', 'bg-orange-500');
+                document.getElementById('conn-dot').classList.replace('shadow-[0_0_8px_#10b981]', 'shadow-[0_0_8px_#f97316]');
+            } else {
+                marketClosedOverlay.classList.remove('opacity-100', 'pointer-events-auto');
+                marketClosedOverlay.classList.add('opacity-0', 'pointer-events-none');
+                
+                // Kembalikan status header jika online
+                if (navigator.onLine && document.getElementById('conn-text').innerText === 'Pasar Tutup') {
+                    document.getElementById('conn-text').innerText = 'Live Socket Aktif';
+                    document.getElementById('conn-dot').classList.replace('bg-orange-500', 'bg-emerald-500');
+                    document.getElementById('conn-dot').classList.replace('shadow-[0_0_8px_#f97316]', 'shadow-[0_0_8px_#10b981]');
+                }
+            }
+        }
+
+        // ==========================================
+        // 2. FITUR FULLSCREEN LINTAS PERANGKAT
         // ==========================================
         function toggleFullScreen() {
             if (!document.fullscreenElement) {
                 document.documentElement.requestFullscreen().catch(err => {
-                    console.warn(`Error masuk fullscreen: ${err.message}`);
+                    console.warn(`Gagal mode fullscreen: ${err.message}`);
                 });
             } else {
                 if (document.exitFullscreen) {
@@ -194,7 +276,7 @@
         });
 
         // ==========================================
-        // FITUR RECONNECT & DETEKSI KONEKSI
+        // 3. FITUR RECONNECT & DETEKSI KONEKSI
         // ==========================================
         const offlinePopup = document.getElementById('offline-popup');
         const reconnectOverlay = document.getElementById('reconnect-overlay');
@@ -208,24 +290,28 @@
             if (isReconnecting) return;
             isReconnecting = true;
             
-            // Tampilkan UI Menyambung Ulang
             connText.innerText = 'Memulihkan Data...';
             connDot.classList.replace('bg-emerald-500', 'bg-yellow-500');
             connDot.classList.replace('bg-red-500', 'bg-yellow-500');
+            connDot.classList.replace('bg-orange-500', 'bg-yellow-500');
             connDot.classList.replace('shadow-[0_0_8px_#ef4444]', 'shadow-[0_0_8px_#eab308]');
+            connDot.classList.replace('shadow-[0_0_8px_#10b981]', 'shadow-[0_0_8px_#eab308]');
+            connDot.classList.replace('shadow-[0_0_8px_#f97316]', 'shadow-[0_0_8px_#eab308]');
+            
             reconnectOverlay.classList.remove('opacity-0', 'pointer-events-none');
             reconnectOverlay.classList.add('opacity-100');
 
-            // Beri jeda 1.5 detik agar sinyal HP benar-benar stabil sebelum menarik data
             setTimeout(() => {
-                switchAsset(currentAsset); // RESTART TOTAL CHART & TICKER TANPA RELOAD HALAMAN
+                switchAsset(currentAsset); 
                 
-                // Kembalikan UI ke Online
                 connDot.classList.replace('bg-yellow-500', 'bg-emerald-500');
                 connDot.classList.replace('shadow-[0_0_8px_#eab308]', 'shadow-[0_0_8px_#10b981]');
                 connText.innerText = 'Live Socket Aktif';
                 reconnectOverlay.classList.remove('opacity-100');
                 reconnectOverlay.classList.add('opacity-0', 'pointer-events-none');
+                
+                // Cek ulang pasar, barangkali baru ganti jam
+                checkMarketStatus();
                 
                 isReconnecting = false;
             }, 1500);
@@ -236,18 +322,13 @@
                 offlinePopup.classList.add('opacity-0', 'pointer-events-none', '-translate-y-8');
                 offlinePopup.classList.remove('opacity-100', 'translate-y-0');
                 connDotPing.classList.remove('hidden');
-                
-                // PANGGIL SISTEM PEMULIHAN OTOMATIS
                 handleAutoReconnect();
-                
             } else {
                 offlinePopup.classList.remove('opacity-0', 'pointer-events-none', '-translate-y-8');
                 offlinePopup.classList.add('opacity-100', 'translate-y-0');
                 connDotPing.classList.add('hidden'); 
-                connDot.classList.replace('bg-emerald-500', 'bg-red-500');
-                connDot.classList.replace('bg-yellow-500', 'bg-red-500');
-                connDot.classList.replace('shadow-[0_0_8px_#10b981]', 'shadow-[0_0_8px_#ef4444]');
-                connDot.classList.replace('shadow-[0_0_8px_#eab308]', 'shadow-[0_0_8px_#ef4444]');
+                
+                connDot.className = "relative inline-flex rounded-full h-1.5 w-1.5 md:h-2 md:w-2 2xl:h-4 2xl:w-4 bg-red-500 shadow-[0_0_8px_#ef4444]";
                 connText.innerText = 'Koneksi Terputus';
             }
         }
@@ -256,7 +337,7 @@
         window.addEventListener('offline', updateConnectionStatus);
 
         // ==========================================
-        // FITUR SUPER REAL-TIME & ANIMASI FLASH
+        // 4. FITUR SUPER REAL-TIME & ANIMASI FLASH
         // ==========================================
         let currentAsset = 'XAU';
         let pollingInterval = null;
@@ -267,7 +348,6 @@
         async function fetchInstantData(assetKey) {
             if (!navigator.onLine) return;
             
-            // Tambahan param _t (timestamp) untuk MENGAKALI CACHE BROWSER agar selalu dapat harga TEPAT SAAT INI
             const timeCacheBuster = new Date().getTime(); 
             const binanceSymbol = assetKey === 'XAU' ? 'PAXGUSDT' : 'BTCUSDT';
             const binanceUrl = `https://data-api.binance.vision/api/v3/ticker/24hr?symbol=${binanceSymbol}&_t=${timeCacheBuster}`;
@@ -309,7 +389,9 @@
 
             liveSocket.onclose = function() {
                 if (!isIntentionalClose && navigator.onLine) {
-                    connText.innerText = 'Mode Fast Polling';
+                    if (document.getElementById('conn-text').innerText !== 'Pasar Tutup') {
+                        document.getElementById('conn-text').innerText = 'Mode Fast Polling';
+                    }
                     pollingInterval = setInterval(() => { fetchInstantData(currentAsset); }, 1000);
                 }
             };
@@ -334,16 +416,16 @@
             lastPriceValue = currentPrice;
 
             if (isUp) {
-                priceEl.className = `bg-[#1e3a2f] text-emerald-400 px-2 py-0.5 rounded-md min-w-[85px] text-center shadow-sm border border-emerald-900/50 text-sm ${priceEl.classList.contains('flash-up') ? 'flash-up' : ''}`;
-                changeEl.className = "text-emerald-500 font-bold text-xs md:text-sm whitespace-nowrap drop-shadow-[0_0_5px_rgba(16,185,129,0.3)]";
+                priceEl.className = `bg-[rgba(16,185,129,0.15)] text-emerald-400 px-2 py-0.5 md:px-3 md:py-1 2xl:px-5 2xl:py-2 rounded-md 2xl:rounded-xl min-w-[85px] md:min-w-[100px] 2xl:min-w-[160px] text-center shadow-sm border border-emerald-900/50 text-sm md:text-base 2xl:text-2xl transition-colors ${priceEl.classList.contains('flash-up') ? 'flash-up' : ''}`;
+                changeEl.className = "text-emerald-500 font-bold text-xs md:text-sm 2xl:text-xl whitespace-nowrap drop-shadow-[0_0_5px_rgba(16,185,129,0.3)] transition-colors";
             } else {
-                priceEl.className = `bg-[#3a1e1e] text-red-400 px-2 py-0.5 rounded-md min-w-[85px] text-center shadow-sm border border-red-900/50 text-sm ${priceEl.classList.contains('flash-down') ? 'flash-down' : ''}`;
-                changeEl.className = "text-red-500 font-bold text-xs md:text-sm whitespace-nowrap drop-shadow-[0_0_5px_rgba(239,68,68,0.3)]";
+                priceEl.className = `bg-[rgba(239,68,68,0.15)] text-red-400 px-2 py-0.5 md:px-3 md:py-1 2xl:px-5 2xl:py-2 rounded-md 2xl:rounded-xl min-w-[85px] md:min-w-[100px] 2xl:min-w-[160px] text-center shadow-sm border border-red-900/50 text-sm md:text-base 2xl:text-2xl transition-colors ${priceEl.classList.contains('flash-down') ? 'flash-down' : ''}`;
+                changeEl.className = "text-red-500 font-bold text-xs md:text-sm 2xl:text-xl whitespace-nowrap drop-shadow-[0_0_5px_rgba(239,68,68,0.3)] transition-colors";
             }
         }
 
         // ==========================================
-        // FITUR SWITCHER ASSET & TRADINGVIEW CHART
+        // 5. FITUR SWITCHER ASSET & TRADINGVIEW CHART
         // ==========================================
         const assets = {
             XAU: { symbolTV: "OANDA:XAUUSD", title: "XAU/USD" },
@@ -354,24 +436,25 @@
             currentAsset = assetKey;
             const asset = assets[assetKey];
 
-            const activeClassXAU = "px-3 py-0.5 rounded-md bg-gradient-to-r from-yellow-600 to-yellow-500 text-white text-[10px] md:text-[11px] font-bold transition-all duration-300 shadow-md transform hover:scale-105 active:scale-95 whitespace-nowrap";
-            const activeClassBTC = "px-3 py-0.5 rounded-md bg-gradient-to-r from-orange-600 to-orange-500 text-white text-[10px] md:text-[11px] font-bold transition-all duration-300 shadow-md transform hover:scale-105 active:scale-95 whitespace-nowrap";
-            const inactiveClass = "px-3 py-0.5 rounded-md text-[#787b86] hover:text-white text-[10px] md:text-[11px] font-bold transition-all duration-300 transform hover:bg-white/5 hover:scale-105 active:scale-95 whitespace-nowrap";
+            // Animasi Tombol Responsif
+            const activeClassXAU = "px-3 py-0.5 md:px-4 md:py-1.5 2xl:px-8 2xl:py-3 rounded-md 2xl:rounded-lg bg-gradient-to-r from-yellow-600 to-yellow-500 text-white text-[10px] md:text-sm 2xl:text-xl font-bold transition-all duration-300 shadow-md transform hover:scale-105 active:scale-95 whitespace-nowrap";
+            const activeClassBTC = "px-3 py-0.5 md:px-4 md:py-1.5 2xl:px-8 2xl:py-3 rounded-md 2xl:rounded-lg bg-gradient-to-r from-orange-600 to-orange-500 text-white text-[10px] md:text-sm 2xl:text-xl font-bold transition-all duration-300 shadow-md transform hover:scale-105 active:scale-95 whitespace-nowrap";
+            const inactiveClass = "px-3 py-0.5 md:px-4 md:py-1.5 2xl:px-8 2xl:py-3 rounded-md 2xl:rounded-lg text-[#787b86] hover:text-white text-[10px] md:text-sm 2xl:text-xl font-bold transition-all duration-300 transform hover:bg-white/5 hover:scale-105 active:scale-95 whitespace-nowrap";
 
             document.getElementById('btn-XAU').className = (assetKey === 'XAU') ? activeClassXAU : inactiveClass;
             document.getElementById('btn-BTC').className = (assetKey === 'BTC') ? activeClassBTC : inactiveClass;
 
             document.getElementById('custom-ticker-symbol').innerText = asset.title;
             document.getElementById('custom-ticker-price').innerHTML = '<span class="animate-pulse">Memuat...</span>';
-            document.getElementById('custom-ticker-price').className = "bg-[#1e222d] text-slate-300 px-2 py-0.5 rounded-md min-w-[85px] text-center transition-all duration-300 border border-white/5 text-sm";
+            document.getElementById('custom-ticker-price').className = "bg-[#1e222d] text-slate-300 px-2 py-0.5 md:px-3 md:py-1 2xl:px-5 2xl:py-2 rounded-md 2xl:rounded-xl min-w-[85px] md:min-w-[100px] 2xl:min-w-[160px] text-center transition-all duration-300 border border-white/5 text-sm md:text-base 2xl:text-2xl";
             document.getElementById('custom-ticker-change').innerText = "--";
-            document.getElementById('custom-ticker-change').className = "text-slate-400 font-semibold text-xs md:text-sm whitespace-nowrap";
+            document.getElementById('custom-ticker-change').className = "text-slate-400 font-semibold text-xs md:text-sm 2xl:text-xl whitespace-nowrap";
 
+            // Langsung periksa apakah pasar buka/tutup
+            checkMarketStatus();
             initSuperRealtimeData(assetKey);
 
-            // RENDER ULANG CHART (MEMAKSA TRADINGVIEW MENARIK DATA TERBARU)
-            // Area div chart dikosongkan dulu agar benar-benar bersih
-            document.getElementById('tradingview_chart').innerHTML = '';
+            document.getElementById('tradingview_chart').innerHTML = ''; 
             
             new TradingView.widget({
                 "autosize": true,
@@ -387,19 +470,27 @@
                 "hide_top_toolbar": false,
                 "hide_legend": false,
                 "save_image": false,
-                "disabled_features": [
+                
+                // --- 3 LAPIS PENGAMAN ANTI VOLUME ---
+                "hide_volume": true,                 
+                "studies": [],                       
+                "disabled_features": [               
                     "create_volume_indicator_by_default", 
                     "volume_force_overlay"               
                 ],
+
                 "container_id": "tradingview_chart",
                 "toolbar_bg": "#0b0e14"
             });
         }
 
         window.addEventListener('DOMContentLoaded', () => {
-            // Cek status internet pertama kali
             if(navigator.onLine) {
                 switchAsset('XAU');
+                // Set Interval: Periksa pasar buka/tutup setiap 10 detik
+                // Sehingga popup akan otomatis menghilang begitu jam menunjukkan 06:00 WIB
+                if (marketCheckInterval) clearInterval(marketCheckInterval);
+                marketCheckInterval = setInterval(checkMarketStatus, 10000);
             } else {
                 updateConnectionStatus();
             }
@@ -407,5 +498,3 @@
     </script>
 </body>
 </html>
-
-
