@@ -1,9 +1,18 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AffannnHs Monitor - Live Streaming Chart</title>
+    
+    <!-- Konfigurasi Tailwind untuk mendukung Mode Gelap/Terang manual -->
+    <script>
+        tailwind = {
+            config: {
+                darkMode: 'class',
+            }
+        }
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     <style>
@@ -16,8 +25,6 @@
             width: 100vw;
             margin: 0;
             padding: 0;
-            background-color: #0b0e14;
-            color: #d1d4dc;
             overflow: hidden !important;
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -58,24 +65,10 @@
         .arrow-up   { animation: arrowBounceUp   0.35s cubic-bezier(0.4,0,0.2,1) forwards; }
         .arrow-down { animation: arrowBounceDown 0.35s cubic-bezier(0.4,0,0.2,1) forwards; }
 
-        /* MINI BAR INDIKATOR */
-        @keyframes barPulseUp {
-            0%   { height: 4px; background: #10b981; }
-            50%  { height: 12px; background: #34d399; }
-            100% { height: 6px; background: #10b981; }
-        }
-        @keyframes barPulseDown {
-            0%   { height: 4px; background: #ef4444; }
-            50%  { height: 12px; background: #f87171; }
-            100% { height: 6px; background: #ef4444; }
-        }
-        .bar-pulse-up   { animation: barPulseUp   0.4s ease forwards; }
-        .bar-pulse-down { animation: barPulseDown 0.4s ease forwards; }
-
         ::-webkit-scrollbar { width:6px; height:6px; }
-        ::-webkit-scrollbar-track { background:#0b0e14; }
-        ::-webkit-scrollbar-thumb { background:#2a2e39; border-radius:3px; }
-        ::-webkit-scrollbar-thumb:hover { background:#434651; }
+        ::-webkit-scrollbar-track { background:transparent; }
+        ::-webkit-scrollbar-thumb { background:rgba(156,163,175,0.5); border-radius:3px; }
+        ::-webkit-scrollbar-thumb:hover { background:rgba(107,114,128,0.8); }
 
         .text-glow { text-shadow: 0 0 15px rgba(234,179,8,0.8); }
 
@@ -100,7 +93,6 @@
         body.ios-fullscreen #tradingview_chart {
             height: 100dvh !important;
         }
-        /* Tombol exit fullscreen di iOS */
         #ios-fs-exit-btn {
             display: none;
             position: fixed;
@@ -124,17 +116,17 @@
         body.ios-fullscreen #ios-fs-exit-btn { display: flex; }
     </style>
 </head>
-<body class="flex flex-col h-screen relative">
+<body class="flex flex-col h-screen relative bg-gray-50 dark:bg-[#0b0e14] text-slate-800 dark:text-[#d1d4dc] transition-colors duration-500">
 
     <!-- TOMBOL EXIT IOS FULLSCREEN -->
     <button id="ios-fs-exit-btn" onclick="toggleFullScreen()" title="Keluar Fullscreen">✕</button>
 
     <!-- WATERMARK -->
     <div class="fixed inset-0 pointer-events-none z-20 flex flex-col justify-center items-center opacity-[0.03] select-none overflow-hidden">
-        <div class="text-white text-5xl md:text-8xl min-[2000px]:text-[150px] font-black rotate-[-35deg] text-center tracking-[0.2em] uppercase whitespace-nowrap">
+        <div class="text-slate-900 dark:text-white text-5xl md:text-8xl min-[2000px]:text-[150px] font-black rotate-[-35deg] text-center tracking-[0.2em] uppercase whitespace-nowrap">
             AffannnHs Monitor
         </div>
-        <div class="text-white text-xl md:text-3xl min-[2000px]:text-6xl font-bold rotate-[-35deg] text-center tracking-widest mt-4 md:mt-10 opacity-70 whitespace-nowrap">
+        <div class="text-slate-900 dark:text-white text-xl md:text-3xl min-[2000px]:text-6xl font-bold rotate-[-35deg] text-center tracking-widest mt-4 md:mt-10 opacity-70 whitespace-nowrap">
             affanharis03@gmail.com
         </div>
     </div>
@@ -153,118 +145,162 @@
     </div>
 
     <!-- OVERLAY RECONNECT -->
-    <div id="reconnect-overlay" class="fixed inset-0 bg-[#0b0e14]/85 backdrop-blur-sm z-50 flex flex-col justify-center items-center opacity-0 pointer-events-none">
+    <div id="reconnect-overlay" class="fixed inset-0 bg-white/80 dark:bg-[#0b0e14]/85 backdrop-blur-sm z-50 flex flex-col justify-center items-center opacity-0 pointer-events-none transition-colors duration-500">
         <div class="animate-spin rounded-full h-12 w-12 md:h-12 md:w-12 min-[2000px]:h-24 min-[2000px]:w-24 border-t-4 border-b-4 border-yellow-500 mb-4 min-[2000px]:mb-8 shadow-[0_0_20px_rgba(234,179,8,0.5)]"></div>
-        <p class="text-yellow-400 font-extrabold tracking-[0.2em] text-sm md:text-sm min-[2000px]:text-2xl animate-pulse">MEMULIHKAN DATA TERBARU...</p>
+        <p class="text-yellow-600 dark:text-yellow-400 font-extrabold tracking-[0.2em] text-sm md:text-sm min-[2000px]:text-2xl animate-pulse">MEMULIHKAN DATA TERBARU...</p>
     </div>
 
     <!-- OVERLAY PASAR TUTUP -->
-    <div id="market-closed-overlay" class="fixed inset-0 bg-[#0b0e14]/70 backdrop-blur-sm z-40 flex flex-col justify-center items-center opacity-0 pointer-events-none pt-12 md:pt-16">
-        <div class="bg-orange-900/40 border border-orange-500/50 p-5 md:p-6 min-[2000px]:p-12 rounded-2xl flex flex-col items-center text-center max-w-[90%] md:max-w-md mx-4 shadow-[0_0_40px_rgba(249,115,22,0.15)]">
-            <div class="bg-orange-500/20 p-3 md:p-4 min-[2000px]:p-6 rounded-full mb-3 md:mb-4">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 md:h-12 md:w-12 min-[2000px]:h-20 min-[2000px]:w-20 text-orange-400 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <div id="market-closed-overlay" class="fixed inset-0 bg-white/70 dark:bg-[#0b0e14]/70 backdrop-blur-sm z-40 flex flex-col justify-center items-center opacity-0 pointer-events-none pt-12 md:pt-16 transition-colors duration-500">
+        <div class="bg-orange-100/90 dark:bg-orange-900/40 border border-orange-400 dark:border-orange-500/50 p-5 md:p-6 min-[2000px]:p-12 rounded-2xl flex flex-col items-center text-center max-w-[90%] md:max-w-md mx-4 shadow-[0_0_40px_rgba(249,115,22,0.15)]">
+            <div class="bg-orange-200 dark:bg-orange-500/20 p-3 md:p-4 min-[2000px]:p-6 rounded-full mb-3 md:mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 md:h-12 md:w-12 min-[2000px]:h-20 min-[2000px]:w-20 text-orange-500 dark:text-orange-400 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
             </div>
-            <h2 class="text-orange-400 font-extrabold text-lg md:text-xl min-[2000px]:text-4xl mb-2 tracking-widest uppercase">Pasar Sedang Tutup</h2>
-            <p class="text-slate-300 text-xs md:text-xs min-[2000px]:text-xl mb-4 md:mb-5 min-[2000px]:mb-8 opacity-90 leading-relaxed">
+            <h2 class="text-orange-600 dark:text-orange-400 font-extrabold text-lg md:text-xl min-[2000px]:text-4xl mb-2 tracking-widest uppercase">Pasar Sedang Tutup</h2>
+            <p class="text-slate-700 dark:text-slate-300 text-xs md:text-xs min-[2000px]:text-xl mb-4 md:mb-5 min-[2000px]:mb-8 opacity-90 leading-relaxed">
                 Perdagangan Emas (XAU) saat ini sedang dalam jadwal istirahat rutin atau libur akhir pekan.
             </p>
-            <div class="bg-[#0b0e14]/80 px-4 py-3 md:px-5 md:py-3 min-[2000px]:px-8 min-[2000px]:py-6 rounded-xl border border-white/5 w-full shadow-inner">
-                <p class="text-slate-400 text-[10px] md:text-[10px] min-[2000px]:text-lg uppercase tracking-[0.2em] mb-1.5 md:mb-1.5">Akan Buka Kembali Pada:</p>
-                <p id="market-open-time" class="text-yellow-400 font-black text-base md:text-lg min-[2000px]:text-3xl drop-shadow-[0_0_8px_rgba(234,179,8,0.5)]">--</p>
+            <div class="bg-white/80 dark:bg-[#0b0e14]/80 px-4 py-3 md:px-5 md:py-3 min-[2000px]:px-8 min-[2000px]:py-6 rounded-xl border border-black/10 dark:border-white/5 w-full shadow-inner">
+                <p class="text-slate-500 dark:text-slate-400 text-[10px] md:text-[10px] min-[2000px]:text-lg uppercase tracking-[0.2em] mb-1.5 md:mb-1.5">Akan Buka Kembali Pada:</p>
+                <p id="market-open-time" class="text-yellow-600 dark:text-yellow-400 font-black text-base md:text-lg min-[2000px]:text-3xl drop-shadow-[0_0_8px_rgba(234,179,8,0.5)]">--</p>
             </div>
         </div>
     </div>
 
     <!-- MODAL ALERT HARGA -->
-    <div id="alert-modal" class="fixed inset-0 bg-[#0b0e14]/80 backdrop-blur-md z-[60] flex flex-col justify-center items-center opacity-0 pointer-events-none scale-95">
-        <div class="bg-[#161a25] border border-yellow-500/30 p-5 md:p-6 min-[2000px]:p-10 rounded-2xl shadow-[0_10px_40px_rgba(234,179,8,0.1)] max-w-[85%] w-80 min-[2000px]:w-[500px]">
+    <div id="alert-modal" class="fixed inset-0 bg-white/80 dark:bg-[#0b0e14]/80 backdrop-blur-md z-[60] flex flex-col justify-center items-center opacity-0 pointer-events-none scale-95 transition-colors duration-500">
+        <div class="bg-white dark:bg-[#161a25] border border-yellow-500/50 dark:border-yellow-500/30 p-5 md:p-6 min-[2000px]:p-10 rounded-2xl shadow-[0_10px_40px_rgba(234,179,8,0.2)] dark:shadow-[0_10px_40px_rgba(234,179,8,0.1)] max-w-[85%] w-80 min-[2000px]:w-[500px]">
             <div class="flex items-center gap-3 mb-4 min-[2000px]:mb-8">
-                <div class="bg-yellow-500/20 p-2 min-[2000px]:p-4 rounded-lg">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 min-[2000px]:h-8 min-[2000px]:w-8 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+                <div class="bg-yellow-100 dark:bg-yellow-500/20 p-2 min-[2000px]:p-4 rounded-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 min-[2000px]:h-8 min-[2000px]:w-8 text-yellow-600 dark:text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
                 </div>
-                <h3 class="text-white font-bold text-base min-[2000px]:text-2xl">Atur Alarm Harga</h3>
+                <h3 class="text-slate-900 dark:text-white font-bold text-base min-[2000px]:text-2xl">Atur Alarm Harga</h3>
             </div>
-            <p class="text-[11px] md:text-xs min-[2000px]:text-lg text-slate-400 mb-1">Harga Saat Ini:</p>
-            <p class="text-white font-mono text-lg min-[2000px]:text-3xl font-bold mb-4 min-[2000px]:mb-6" id="alert-modal-current">--</p>
-            <label class="block text-[11px] md:text-xs min-[2000px]:text-lg text-slate-400 mb-2">Target Harga Notifikasi:</label>
-            <input type="number" id="alert-input" step="0.01" class="w-full bg-[#0b0e14] border border-white/10 text-white font-mono p-2.5 min-[2000px]:p-4 rounded-lg mb-5 min-[2000px]:mb-8 focus:outline-none focus:border-yellow-500 min-[2000px]:text-xl" placeholder="Contoh: 2750.50">
+            <p class="text-[11px] md:text-xs min-[2000px]:text-lg text-slate-500 dark:text-slate-400 mb-1">Harga Saat Ini:</p>
+            <p class="text-slate-900 dark:text-white font-mono text-lg min-[2000px]:text-3xl font-bold mb-4 min-[2000px]:mb-6" id="alert-modal-current">--</p>
+            <label class="block text-[11px] md:text-xs min-[2000px]:text-lg text-slate-500 dark:text-slate-400 mb-2">Target Harga Notifikasi:</label>
+            <input type="number" id="alert-input" step="0.01" class="w-full bg-gray-50 dark:bg-[#0b0e14] border border-black/10 dark:border-white/10 text-slate-900 dark:text-white font-mono p-2.5 min-[2000px]:p-4 rounded-lg mb-5 min-[2000px]:mb-8 focus:outline-none focus:border-yellow-500 min-[2000px]:text-xl" placeholder="Contoh: 2750.50">
             <div class="flex justify-end gap-2 min-[2000px]:gap-4">
-                <button onclick="clearAlert()" id="btn-clear-alert" class="hidden px-4 py-2 text-xs min-[2000px]:text-lg text-red-400 hover:bg-red-500/10 rounded-lg transition-colors font-semibold">Hapus Alarm</button>
-                <button onclick="toggleAlertModal()" class="px-4 py-2 text-xs min-[2000px]:text-lg text-slate-400 hover:bg-white/5 rounded-lg transition-colors font-semibold">Batal</button>
-                <button onclick="saveAlert()" class="px-5 py-2 text-xs min-[2000px]:text-lg bg-gradient-to-r from-yellow-600 to-yellow-500 text-white rounded-lg hover:opacity-90 transition-opacity font-bold shadow-md">Simpan</button>
+                <button onclick="clearAlert()" id="btn-clear-alert" class="hidden px-4 py-2 text-xs min-[2000px]:text-lg text-red-500 dark:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors font-semibold">Hapus Alarm</button>
+                <button onclick="toggleAlertModal()" class="px-4 py-2 text-xs min-[2000px]:text-lg text-slate-500 dark:text-slate-400 hover:bg-black/5 dark:hover:bg-white/5 rounded-lg transition-colors font-semibold">Batal</button>
+                <button onclick="saveAlert()" class="px-5 py-2 text-xs min-[2000px]:text-lg bg-gradient-to-r from-yellow-500 to-yellow-400 dark:from-yellow-600 dark:to-yellow-500 text-slate-900 dark:text-white rounded-lg hover:opacity-90 transition-opacity font-bold shadow-md">Simpan</button>
             </div>
         </div>
     </div>
 
     <!-- POPUP ALARM TERCAPAI -->
-    <div id="alert-triggered-popup" class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-yellow-600/95 backdrop-blur-xl text-white px-8 py-6 min-[2000px]:px-14 min-[2000px]:py-10 rounded-2xl shadow-[0_0_60px_rgba(234,179,8,0.5)] z-[70] flex flex-col items-center gap-4 min-[2000px]:gap-8 transition-all duration-500 opacity-0 pointer-events-none scale-90 border border-yellow-400">
-        <div class="bg-yellow-500 p-4 min-[2000px]:p-8 rounded-full animate-bounce shadow-lg">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 min-[2000px]:h-20 min-[2000px]:w-20 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+    <div id="alert-triggered-popup" class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-yellow-500/95 dark:bg-yellow-600/95 backdrop-blur-xl text-slate-900 dark:text-white px-8 py-6 min-[2000px]:px-14 min-[2000px]:py-10 rounded-2xl shadow-[0_0_60px_rgba(234,179,8,0.5)] z-[70] flex flex-col items-center gap-4 min-[2000px]:gap-8 transition-all duration-500 opacity-0 pointer-events-none scale-90 border border-yellow-400">
+        <div class="bg-yellow-400 dark:bg-yellow-500 p-4 min-[2000px]:p-8 rounded-full animate-bounce shadow-lg">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 min-[2000px]:h-20 min-[2000px]:w-20 text-slate-900 dark:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
         </div>
         <div class="text-center">
             <p class="font-black text-2xl min-[2000px]:text-5xl tracking-widest uppercase mb-1 min-[2000px]:mb-3">Target Tercapai!</p>
-            <p class="text-base md:text-lg min-[2000px]:text-3xl text-yellow-100"><span id="alert-trigger-asset" class="font-bold">XAU/USD</span> telah menyentuh <br><span id="alert-trigger-price" class="font-black text-2xl min-[2000px]:text-4xl">--</span></p>
+            <p class="text-base md:text-lg min-[2000px]:text-3xl text-yellow-900 dark:text-yellow-100"><span id="alert-trigger-asset" class="font-bold">XAU/USD</span> telah menyentuh <br><span id="alert-trigger-price" class="font-black text-2xl min-[2000px]:text-4xl">--</span></p>
         </div>
-        <button onclick="closeTriggeredAlert()" class="mt-2 min-[2000px]:mt-6 bg-white text-yellow-600 font-black px-8 py-2.5 min-[2000px]:px-12 min-[2000px]:py-4 min-[2000px]:text-2xl rounded-full hover:bg-yellow-100 transition transform hover:scale-105 shadow-md">Tutup Alarm</button>
+        <button onclick="closeTriggeredAlert()" class="mt-2 min-[2000px]:mt-6 bg-slate-900 dark:bg-white text-yellow-400 dark:text-yellow-600 font-black px-8 py-2.5 min-[2000px]:px-12 min-[2000px]:py-4 min-[2000px]:text-2xl rounded-full hover:bg-slate-800 dark:hover:bg-yellow-100 transition transform hover:scale-105 shadow-md">Tutup Alarm</button>
+    </div>
+
+    <!-- STATS MODAL (STATISTIK DETAIL) -->
+    <div id="stats-modal" class="fixed inset-0 bg-white/85 dark:bg-[#0b0e14]/85 backdrop-blur-md z-[65] flex flex-col justify-center items-center opacity-0 pointer-events-none scale-95 transition-all duration-400">
+        <div class="bg-gray-50 dark:bg-[#0b0e14] border border-black/10 dark:border-white/10 p-6 rounded-2xl shadow-[0_10px_50px_rgba(0,0,0,0.2)] dark:shadow-[0_10px_50px_rgba(0,0,0,0.5)] w-[90%] max-w-md relative">
+            <button onclick="toggleStatsModal()" class="absolute top-4 right-4 text-slate-500 hover:text-slate-800 dark:hover:text-white transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+            <h2 class="text-pink-600 dark:text-pink-500 font-black text-2xl tracking-widest uppercase mb-6" style="text-shadow: 0 0 15px rgba(236,72,153,0.3);">STATISTICS</h2>
+            <div class="grid grid-cols-1 gap-4">
+                <div class="border border-emerald-500/30 bg-emerald-50 dark:bg-emerald-500/[0.05] rounded-xl p-4">
+                    <p class="text-emerald-600 dark:text-emerald-500/70 text-[11px] uppercase font-black tracking-tighter mb-1 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
+                        HARGA NAIK (MAX 24H)
+                    </p>
+                    <p id="modal-stat-high" class="text-emerald-600 dark:text-emerald-400 font-mono font-black text-2xl drop-shadow-[0_0_4px_rgba(16,185,129,0.2)] dark:drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]">--</p>
+                </div>
+                <div class="border border-rose-500/30 bg-rose-50 dark:bg-rose-500/[0.05] rounded-xl p-4">
+                    <p class="text-rose-600 dark:text-rose-500/70 text-[11px] uppercase font-black tracking-tighter mb-1 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" /></svg>
+                        HARGA TURUN (MIN 24H)
+                    </p>
+                    <p id="modal-stat-low" class="text-rose-600 dark:text-rose-400 font-mono font-black text-2xl drop-shadow-[0_0_4px_rgba(244,63,94,0.2)] dark:drop-shadow-[0_0_8px_rgba(244,63,94,0.5)]">--</p>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-black/5 dark:bg-white/5 p-3 rounded-lg border border-black/5 dark:border-white/5 text-center">
+                        <p class="text-[9px] text-slate-500 uppercase font-bold mb-1">Rata-Rata</p>
+                        <p id="modal-stat-avg" class="text-blue-600 dark:text-blue-400 font-mono font-bold text-sm">--</p>
+                    </div>
+                    <div class="bg-black/5 dark:bg-white/5 p-3 rounded-lg border border-black/5 dark:border-white/5 text-center">
+                        <p class="text-[9px] text-slate-500 uppercase font-bold mb-1">Volatilitas</p>
+                        <p id="modal-stat-volat" class="text-purple-600 dark:text-purple-400 font-mono font-bold text-sm">--</p>
+                    </div>
+                </div>
+                <div class="bg-pink-100 dark:bg-pink-500/10 border border-pink-300 dark:border-pink-500/20 p-3 rounded-lg flex justify-between items-center">
+                    <span class="text-[10px] text-pink-600 dark:text-pink-300 font-bold uppercase">Total Stream Updates</span>
+                    <span id="modal-stat-updates" class="text-pink-600 dark:text-pink-400 font-mono font-black">0</span>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- ===================== HEADER ===================== -->
-    <header class="relative z-30 bg-[#0b0e14]/90 backdrop-blur-lg border-b border-white/5 px-2 py-1.5 md:px-4 md:py-1.5 min-[2000px]:px-8 min-[2000px]:py-5 flex flex-col sm:flex-row justify-between items-center gap-2 sm:gap-4 shadow-[0_4px_20px_rgba(0,0,0,0.5)] min-h-[44px] md:min-h-[44px] min-[2000px]:min-h-[100px] transition-all duration-300">
+    <header class="relative z-30 bg-white/90 dark:bg-[#0b0e14]/90 backdrop-blur-lg border-b border-black/5 dark:border-white/5 px-2 py-1.5 md:px-4 md:py-1.5 min-[2000px]:px-8 min-[2000px]:py-5 flex flex-col sm:flex-row justify-between items-center gap-2 sm:gap-4 shadow-[0_4px_15px_rgba(0,0,0,0.05)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.5)] min-h-[44px] md:min-h-[44px] min-[2000px]:min-h-[100px] transition-colors duration-500">
 
         <!-- LOGO -->
         <div class="flex items-center gap-2 md:gap-2.5 min-[2000px]:gap-5 w-full sm:w-auto justify-center sm:justify-start group cursor-default">
-            <div class="bg-gradient-to-tr from-yellow-600 to-yellow-300 p-1 md:p-1.5 min-[2000px]:p-3 rounded-md shadow-[0_0_10px_rgba(234,179,8,0.4)]">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 md:h-4 md:w-4 min-[2000px]:h-8 min-[2000px]:w-8 text-[#0b0e14]" viewBox="0 0 24 24" fill="currentColor">
+            <div class="bg-gradient-to-tr from-yellow-500 to-yellow-300 dark:from-yellow-600 dark:to-yellow-300 p-1 md:p-1.5 min-[2000px]:p-3 rounded-md shadow-[0_0_10px_rgba(234,179,8,0.2)] dark:shadow-[0_0_10px_rgba(234,179,8,0.4)]">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 md:h-4 md:w-4 min-[2000px]:h-8 min-[2000px]:w-8 text-white dark:text-[#0b0e14]" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
                 </svg>
             </div>
-            <h1 class="text-sm md:text-[15px] min-[2000px]:text-3xl font-extrabold tracking-wider text-white whitespace-nowrap">
-                AffannnHs <span class="bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 to-yellow-200 text-glow">Monitor</span>
+            <h1 class="text-sm md:text-[15px] min-[2000px]:text-3xl font-extrabold tracking-wider text-slate-900 dark:text-white whitespace-nowrap">
+                AffannnHs <span class="bg-clip-text text-transparent bg-gradient-to-r from-yellow-500 to-yellow-400 dark:from-yellow-400 dark:to-yellow-200 text-glow">Monitor</span>
             </h1>
         </div>
 
         <!-- TICKER HARGA + INDIKATOR CANDLESTICK ANIMASI -->
         <div class="w-full sm:w-auto flex justify-center items-center gap-1 min-[2000px]:gap-3">
-            <div class="flex items-center gap-2 md:gap-2.5 min-[2000px]:gap-5 font-bold tracking-tight bg-white/[0.03] px-3 py-1 md:px-3 md:py-1 min-[2000px]:px-8 min-[2000px]:py-4 rounded-xl border border-white/5 shadow-inner backdrop-blur-sm">
+            <div class="flex items-center gap-2 md:gap-2.5 min-[2000px]:gap-5 font-bold tracking-tight bg-black/[0.03] dark:bg-white/[0.03] px-3 py-1 md:px-3 md:py-1 min-[2000px]:px-8 min-[2000px]:py-4 rounded-xl border border-black/5 dark:border-white/5 shadow-inner backdrop-blur-sm transition-colors duration-500">
                 <!-- Nama Simbol -->
-                <span id="custom-ticker-symbol" class="text-white drop-shadow-md text-sm md:text-sm min-[2000px]:text-2xl">XAU/USD</span>
+                <span id="custom-ticker-symbol" class="text-slate-900 dark:text-white drop-shadow-md text-sm md:text-sm min-[2000px]:text-2xl">XAU/USD</span>
 
                 <!-- MINI CANDLESTICK BAR ANIMASI -->
                 <div class="flex items-end gap-[2px] h-4 min-[2000px]:h-7" id="mini-bars-container">
-                    <div id="mini-bar-1" class="w-[3px] min-[2000px]:w-[5px] rounded-sm transition-all duration-200" style="height:6px; background:#555;"></div>
-                    <div id="mini-bar-2" class="w-[3px] min-[2000px]:w-[5px] rounded-sm transition-all duration-200" style="height:10px; background:#555;"></div>
-                    <div id="mini-bar-3" class="w-[3px] min-[2000px]:w-[5px] rounded-sm transition-all duration-200" style="height:7px; background:#555;"></div>
-                    <div id="mini-bar-4" class="w-[3px] min-[2000px]:w-[5px] rounded-sm transition-all duration-200" style="height:9px; background:#555;"></div>
-                    <div id="mini-bar-5" class="w-[3px] min-[2000px]:w-[5px] rounded-sm transition-all duration-200" style="height:5px; background:#555;"></div>
+                    <div id="mini-bar-1" class="w-[3px] min-[2000px]:w-[5px] rounded-sm transition-all duration-200" style="height:6px; background:#9ca3af;"></div>
+                    <div id="mini-bar-2" class="w-[3px] min-[2000px]:w-[5px] rounded-sm transition-all duration-200" style="height:10px; background:#9ca3af;"></div>
+                    <div id="mini-bar-3" class="w-[3px] min-[2000px]:w-[5px] rounded-sm transition-all duration-200" style="height:7px; background:#9ca3af;"></div>
+                    <div id="mini-bar-4" class="w-[3px] min-[2000px]:w-[5px] rounded-sm transition-all duration-200" style="height:9px; background:#9ca3af;"></div>
+                    <div id="mini-bar-5" class="w-[3px] min-[2000px]:w-[5px] rounded-sm transition-all duration-200" style="height:5px; background:#9ca3af;"></div>
                 </div>
 
                 <!-- KOTAK HARGA + PANAH ARAH -->
                 <div class="relative flex items-center gap-1">
-                    <!-- PANAH ARAH (CANDLESTICK DIRECTION INDICATOR) -->
-                    <div id="price-arrow" class="text-base min-[2000px]:text-2xl leading-none font-black w-4 min-[2000px]:w-6 text-center select-none" style="color:#555;">—</div>
+                    <!-- PANAH ARAH -->
+                    <div id="price-arrow" class="text-base min-[2000px]:text-2xl leading-none font-black w-4 min-[2000px]:w-6 text-center select-none text-gray-400 dark:text-gray-600">—</div>
                     <!-- HARGA -->
-                    <span id="custom-ticker-price" class="bg-[rgba(239,68,68,0.15)] text-red-400 px-2 py-0.5 md:px-2 md:py-0.5 min-[2000px]:px-5 min-[2000px]:py-2 rounded-md min-[2000px]:rounded-xl min-w-[85px] md:min-w-[90px] min-[2000px]:min-w-[160px] text-center transition-all duration-300 border border-red-900/50 shadow-sm text-sm md:text-sm min-[2000px]:text-2xl font-mono">
+                    <span id="custom-ticker-price" class="bg-red-100 dark:bg-[rgba(239,68,68,0.15)] text-red-600 dark:text-red-400 px-2 py-0.5 md:px-2 md:py-0.5 min-[2000px]:px-5 min-[2000px]:py-2 rounded-md min-[2000px]:rounded-xl min-w-[85px] md:min-w-[90px] min-[2000px]:min-w-[160px] text-center transition-all duration-300 border border-red-200 dark:border-red-900/50 shadow-sm text-sm md:text-sm min-[2000px]:text-2xl font-mono">
                         <span class="animate-pulse">Memuat...</span>
                     </span>
                 </div>
 
                 <!-- PERUBAHAN & PERSENTASE -->
-                <span id="custom-ticker-change" class="text-slate-400 font-semibold text-xs md:text-xs min-[2000px]:text-xl whitespace-nowrap transition-colors duration-300">--</span>
+                <span id="custom-ticker-change" class="text-slate-500 dark:text-slate-400 font-semibold text-xs md:text-xs min-[2000px]:text-xl whitespace-nowrap transition-colors duration-300">--</span>
             </div>
 
             <!-- TOMBOL ALARM -->
-            <button onclick="toggleAlertModal()" id="btn-alert-icon" class="bg-white/5 hover:bg-white/10 text-slate-400 p-1.5 min-[2000px]:p-4 rounded-lg border border-white/10 transition-colors shadow-inner" title="Atur Alarm Harga">
+            <button onclick="toggleAlertModal()" id="btn-alert-icon" class="bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-slate-500 dark:text-slate-400 p-1.5 min-[2000px]:p-4 rounded-lg border border-black/10 dark:border-white/10 transition-colors shadow-inner" title="Atur Alarm Harga">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 md:h-4 md:w-4 min-[2000px]:h-8 min-[2000px]:w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+            </button>
+            <!-- TOMBOL STATS -->
+            <button onclick="toggleStatsModal()" class="bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-slate-500 dark:text-slate-400 p-1.5 min-[2000px]:p-4 rounded-lg border border-black/10 dark:border-white/10 transition-colors shadow-inner" title="Lihat Statistik Detail">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 md:h-4 md:w-4 min-[2000px]:h-8 min-[2000px]:w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
             </button>
         </div>
 
-        <!-- KANAN: KONEKSI + FULLSCREEN + SWITCHER -->
+        <!-- KANAN: KONEKSI + TEMA + FULLSCREEN + SWITCHER -->
         <div class="flex flex-col sm:flex-row items-center gap-1.5 md:gap-2.5 min-[2000px]:gap-6 w-full sm:w-auto justify-center sm:justify-end">
             <div class="flex items-center gap-1.5 md:gap-2 min-[2000px]:gap-5">
                 <!-- STATUS KONEKSI -->
-                <div class="text-[9px] md:text-[9px] min-[2000px]:text-lg uppercase tracking-widest font-bold text-[#787b86] flex items-center gap-1.5 min-[2000px]:gap-3 whitespace-nowrap transition-colors duration-300 bg-black/20 px-2 py-0.5 md:px-2 md:py-0.5 min-[2000px]:px-5 min-[2000px]:py-2 rounded-full border border-white/5" id="conn-text-container">
+                <div class="text-[9px] md:text-[9px] min-[2000px]:text-lg uppercase tracking-widest font-bold text-slate-600 dark:text-[#787b86] flex items-center gap-1.5 min-[2000px]:gap-3 whitespace-nowrap transition-colors duration-300 bg-black/5 dark:bg-black/20 px-2 py-0.5 md:px-2 md:py-0.5 min-[2000px]:px-5 min-[2000px]:py-2 rounded-full border border-black/5 dark:border-white/5" id="conn-text-container">
                     <span class="relative flex h-1.5 w-1.5 md:h-1.5 md:w-1.5 min-[2000px]:h-4 min-[2000px]:w-4" id="conn-dot-wrapper">
                         <span id="conn-dot-ping" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                         <span id="conn-dot" class="relative inline-flex rounded-full h-1.5 w-1.5 md:h-1.5 md:w-1.5 min-[2000px]:h-4 min-[2000px]:w-4 bg-emerald-500 shadow-[0_0_8px_#10b981]"></span>
@@ -272,23 +308,35 @@
                     <span id="conn-text">Live Socket Aktif</span>
                 </div>
 
-                <!-- TOMBOL FULLSCREEN (Support Android + iOS) -->
-                <button onclick="toggleFullScreen()" id="btn-fullscreen" class="bg-black/40 hover:bg-white/10 text-white p-1 md:p-1 min-[2000px]:p-3 rounded-md border border-white/20 transition-all duration-300 flex items-center justify-center shadow-[0_0_10px_rgba(255,255,255,0.1)] group" title="Layar Penuh">
+                <!-- TOMBOL THEME (Terang/Gelap) -->
+                <button onclick="toggleTheme()" class="bg-black/5 dark:bg-black/40 hover:bg-black/10 dark:hover:bg-white/10 text-slate-800 dark:text-white p-1 md:p-1 min-[2000px]:p-3 rounded-md border border-black/10 dark:border-white/20 transition-all duration-300 flex items-center justify-center shadow-sm dark:shadow-[0_0_10px_rgba(255,255,255,0.1)] group" title="Ubah Tema Gelap/Terang">
+                    <!-- Icon Sun (untuk ubah ke light) -->
+                    <svg class="h-4 w-4 md:h-4 md:w-4 min-[2000px]:h-8 min-[2000px]:w-8 hidden dark:block group-hover:scale-110 transition-transform text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                    <!-- Icon Moon (untuk ubah ke dark) -->
+                    <svg class="h-4 w-4 md:h-4 md:w-4 min-[2000px]:h-8 min-[2000px]:w-8 block dark:hidden group-hover:scale-110 transition-transform text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                    </svg>
+                </button>
+
+                <!-- TOMBOL FULLSCREEN -->
+                <button onclick="toggleFullScreen()" id="btn-fullscreen" class="bg-black/5 dark:bg-black/40 hover:bg-black/10 dark:hover:bg-white/10 text-slate-800 dark:text-white p-1 md:p-1 min-[2000px]:p-3 rounded-md border border-black/10 dark:border-white/20 transition-all duration-300 flex items-center justify-center shadow-sm dark:shadow-[0_0_10px_rgba(255,255,255,0.1)] group" title="Layar Penuh">
                     <svg id="fs-icon-enter" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 md:h-4 md:w-4 min-[2000px]:h-8 min-[2000px]:w-8 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
                     </svg>
-                    <svg id="fs-icon-exit" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 md:h-4 md:w-4 min-[2000px]:h-8 min-[2000px]:w-8 hidden text-yellow-400 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg id="fs-icon-exit" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 md:h-4 md:w-4 min-[2000px]:h-8 min-[2000px]:w-8 hidden text-yellow-500 dark:text-yellow-400 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20v-6h-6m6 0l-5 5m11-5h6v6m-6-6l5 5M9 4v6H3m6 0L4 5m11 5h6V4m-6 6l5-5" />
                     </svg>
                 </button>
             </div>
 
             <!-- SWITCHER ASSET -->
-            <div class="flex bg-black/40 rounded-lg p-0.5 md:p-0.5 min-[2000px]:p-2 border border-white/10 backdrop-blur-md shadow-inner">
-                <button id="btn-XAU" onclick="switchAsset('XAU')" class="px-3 py-0.5 md:px-3 md:py-1 min-[2000px]:px-8 min-[2000px]:py-3 rounded-md min-[2000px]:rounded-lg bg-gradient-to-r from-yellow-600 to-yellow-500 text-white text-[10px] md:text-[11px] min-[2000px]:text-xl font-bold transition-all duration-300 shadow-md transform hover:scale-105 active:scale-95 whitespace-nowrap cursor-pointer">
+            <div class="flex bg-black/10 dark:bg-black/40 rounded-lg p-0.5 md:p-0.5 min-[2000px]:p-2 border border-black/5 dark:border-white/10 backdrop-blur-md shadow-inner transition-colors duration-500">
+                <button id="btn-XAU" onclick="switchAsset('XAU')" class="px-3 py-0.5 md:px-3 md:py-1 min-[2000px]:px-8 min-[2000px]:py-3 rounded-md min-[2000px]:rounded-lg bg-gradient-to-r from-yellow-500 to-yellow-400 dark:from-yellow-600 dark:to-yellow-500 text-slate-900 dark:text-white text-[10px] md:text-[11px] min-[2000px]:text-xl font-bold transition-all duration-300 shadow-md transform hover:scale-105 active:scale-95 whitespace-nowrap cursor-pointer">
                     XAU (Emas)
                 </button>
-                <button id="btn-BTC" onclick="switchAsset('BTC')" class="px-3 py-0.5 md:px-3 md:py-1 min-[2000px]:px-8 min-[2000px]:py-3 rounded-md min-[2000px]:rounded-lg text-[#787b86] hover:text-white text-[10px] md:text-[11px] min-[2000px]:text-xl font-bold transition-all duration-300 transform hover:bg-white/5 hover:scale-105 active:scale-95 whitespace-nowrap cursor-pointer">
+                <button id="btn-BTC" onclick="switchAsset('BTC')" class="px-3 py-0.5 md:px-3 md:py-1 min-[2000px]:px-8 min-[2000px]:py-3 rounded-md min-[2000px]:rounded-lg text-slate-600 dark:text-[#787b86] hover:text-slate-900 dark:hover:text-white text-[10px] md:text-[11px] min-[2000px]:text-xl font-bold transition-all duration-300 transform hover:bg-black/5 dark:hover:bg-white/5 hover:scale-105 active:scale-95 whitespace-nowrap cursor-pointer">
                     BTC (Bitcoin)
                 </button>
             </div>
@@ -296,25 +344,25 @@
     </header>
 
     <!-- STATS BAR -->
-    <div id="stats-bar" class="relative z-20 bg-[#080b0f] border-b border-white/5 py-1 px-4 min-[2000px]:py-3 flex justify-center gap-4 md:gap-8 min-[2000px]:gap-16 text-[9px] md:text-[10px] min-[2000px]:text-lg text-slate-400">
-        <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 hidden sm:block"></span>24H Tertinggi: <span id="stat-high" class="text-white font-mono font-semibold">--</span></span>
-        <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-red-500 hidden sm:block"></span>24H Terendah: <span id="stat-low" class="text-white font-mono font-semibold">--</span></span>
-        <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-blue-500 hidden sm:block"></span>Volume: <span id="stat-vol" class="text-white font-mono font-semibold">--</span></span>
+    <div id="stats-bar" class="relative z-20 bg-gray-100 dark:bg-[#080b0f] border-b border-black/5 dark:border-white/5 py-1 px-4 min-[2000px]:py-3 flex justify-center gap-4 md:gap-8 min-[2000px]:gap-16 text-[9px] md:text-[10px] min-[2000px]:text-lg text-slate-500 dark:text-slate-400 transition-colors duration-500">
+        <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 hidden sm:block"></span>24H Tertinggi: <span id="stat-high" class="text-slate-800 dark:text-white font-mono font-semibold">--</span></span>
+        <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-red-500 hidden sm:block"></span>24H Terendah: <span id="stat-low" class="text-slate-800 dark:text-white font-mono font-semibold">--</span></span>
+        <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-blue-500 hidden sm:block"></span>Volume: <span id="stat-vol" class="text-slate-800 dark:text-white font-mono font-semibold">--</span></span>
     </div>
 
     <!-- MAIN CHART -->
-    <main class="flex-grow relative bg-[#0b0e14] w-full overflow-hidden z-10">
+    <main class="flex-grow relative bg-white dark:bg-[#0b0e14] w-full overflow-hidden z-10 transition-colors duration-500">
         <div class="absolute inset-0 w-full h-full">
             <div id="tradingview_chart" class="h-full w-full"></div>
         </div>
     </main>
 
     <!-- FOOTER -->
-    <footer class="relative z-30 border-t border-white/5 py-1.5 md:py-1.5 min-[2000px]:py-4 px-3 md:px-4 min-[2000px]:px-10 flex justify-between items-center text-[9px] md:text-[9px] min-[2000px]:text-lg bg-[#0b0e14]/90 backdrop-blur-md">
-        <p class="text-[#787b86] font-medium tracking-wide">
-            Design & Engine <span class="bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 to-orange-500 font-extrabold tracking-widest animate-pulse ml-1 text-glow">By AffannnHs</span>
+    <footer class="relative z-30 border-t border-black/5 dark:border-white/5 py-1.5 md:py-1.5 min-[2000px]:py-4 px-3 md:px-4 min-[2000px]:px-10 flex justify-between items-center text-[9px] md:text-[9px] min-[2000px]:text-lg bg-white/90 dark:bg-[#0b0e14]/90 backdrop-blur-md transition-colors duration-500">
+        <p class="text-slate-500 dark:text-[#787b86] font-medium tracking-wide">
+            Design & Engine <span class="bg-clip-text text-transparent bg-gradient-to-r from-yellow-500 to-orange-400 dark:from-yellow-400 dark:to-orange-500 font-extrabold tracking-widest animate-pulse ml-1 text-glow">By AffannnHs</span>
         </p>
-        <p class="text-[#787b86]/70 flex items-center gap-1 min-[2000px]:gap-2 font-medium">
+        <p class="text-slate-500/70 dark:text-[#787b86]/70 flex items-center gap-1 min-[2000px]:gap-2 font-medium">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 md:h-3 md:w-3 min-[2000px]:h-6 min-[2000px]:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
@@ -324,23 +372,48 @@
 
     <script type="text/javascript">
         // ==========================================
-        // KEAMANAN
+        // KEAMANAN & CLIPBOARD
         // ==========================================
         document.addEventListener('contextmenu', function(e){ e.preventDefault(); });
         document.ondragstart = function(){ return false; };
+        function copyWatermark() {
+            try {
+                const ta = document.createElement("textarea");
+                ta.value = 'Hak cipta dilindungi oleh Affan Haris Saputra - affanharis03@gmail.com';
+                ta.style.position = "fixed"; ta.style.opacity = "0";
+                document.body.appendChild(ta); ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+            } catch (err) { console.warn('Clipboard di-block.'); }
+        }
         document.addEventListener('keydown', function(e) {
             if (e.key==='F12'||e.keyCode===123){e.preventDefault();return false;}
             if (e.ctrlKey&&e.shiftKey&&['I','J','C'].includes(e.key.toUpperCase())){e.preventDefault();return false;}
             if (e.ctrlKey&&['U','C','S'].includes(e.key.toUpperCase())){e.preventDefault();return false;}
             if (e.key==='PrintScreen'||e.keyCode===44){
-                navigator.clipboard.writeText('Hak cipta dilindungi oleh Affan Haris Saputra - affanharis03@gmail.com');
+                copyWatermark();
             }
         });
         document.addEventListener('keyup', function(e){
             if (e.key==='PrintScreen'||e.keyCode===44){
-                navigator.clipboard.writeText('Hak cipta dilindungi oleh Affan Haris Saputra - affanharis03@gmail.com');
+                copyWatermark();
             }
         });
+
+        // ==========================================
+        // TEMA (LIGHT / DARK MODE)
+        // ==========================================
+        let isLightMode = false;
+        function toggleTheme() {
+            isLightMode = !isLightMode;
+            if(isLightMode) {
+                document.documentElement.classList.remove('dark');
+            } else {
+                document.documentElement.classList.add('dark');
+            }
+            // Re-render chart untuk mengaplikasikan warna tema TV
+            switchAsset(currentAsset);
+        }
 
         // ==========================================
         // AUDIO ALARM
@@ -399,15 +472,15 @@
             targetAlertPrice=val;
             alertCondition=targetAlertPrice>lastPriceValue?'up':'down';
             const btn=document.getElementById('btn-alert-icon');
-            btn.classList.remove('text-slate-400','bg-white/5');
-            btn.classList.add('text-yellow-400','bg-yellow-400/20','border-yellow-500/50','shadow-[0_0_10px_rgba(234,179,8,0.3)]');
+            btn.classList.remove('text-slate-500','dark:text-slate-400','bg-black/5','dark:bg-white/5');
+            btn.classList.add('text-yellow-500','bg-yellow-100','dark:bg-yellow-400/20','border-yellow-500/50','shadow-[0_0_10px_rgba(234,179,8,0.3)]');
             toggleAlertModal();
         }
         function clearAlert(){
             targetAlertPrice=null; alertCondition=null;
             const btn=document.getElementById('btn-alert-icon');
-            btn.classList.remove('text-yellow-400','bg-yellow-400/20','border-yellow-500/50','shadow-[0_0_10px_rgba(234,179,8,0.3)]');
-            btn.classList.add('text-slate-400','bg-white/5');
+            btn.classList.remove('text-yellow-500','bg-yellow-100','dark:bg-yellow-400/20','border-yellow-500/50','shadow-[0_0_10px_rgba(234,179,8,0.3)]');
+            btn.classList.add('text-slate-500','dark:text-slate-400','bg-black/5','dark:bg-white/5');
             toggleAlertModal();
         }
         function checkAlertTrigger(currentPrice){
@@ -424,8 +497,8 @@
                 popup.classList.add('opacity-100','pointer-events-auto','scale-100');
                 targetAlertPrice=null; alertCondition=null;
                 const btn=document.getElementById('btn-alert-icon');
-                btn.classList.remove('text-yellow-400','bg-yellow-400/20','border-yellow-500/50','shadow-[0_0_10px_rgba(234,179,8,0.3)]');
-                btn.classList.add('text-slate-400','bg-white/5');
+                btn.classList.remove('text-yellow-500','bg-yellow-100','dark:bg-yellow-400/20','border-yellow-500/50','shadow-[0_0_10px_rgba(234,179,8,0.3)]');
+                btn.classList.add('text-slate-500','dark:text-slate-400','bg-black/5','dark:bg-white/5');
             }
         }
         function closeTriggeredAlert(){
@@ -495,7 +568,6 @@
                     document.body.classList.add('ios-fullscreen');
                     document.getElementById('fs-icon-enter').classList.add('hidden');
                     document.getElementById('fs-icon-exit').classList.remove('hidden');
-                    // Scroll to top supaya address bar hilang
                     window.scrollTo(0, 1);
                 } else {
                     document.body.classList.remove('ios-fullscreen');
@@ -506,7 +578,6 @@
                 // Android / Desktop: Fullscreen API standar
                 if(!document.fullscreenElement){
                     document.documentElement.requestFullscreen().catch(err=>{
-                        // Fallback jika API gagal
                         document.body.classList.add('ios-fullscreen');
                         isIOSFullscreen = true;
                         document.getElementById('fs-icon-enter').classList.add('hidden');
@@ -590,9 +661,8 @@
         // ==========================================
         // ANIMASI MINI BARS & PANAH (MIRROR CANDLESTICK)
         // ==========================================
-        // Menyimpan 5 harga terakhir untuk mini bar chart
         let priceHistory = [0,0,0,0,0];
-        let barColors = ['#555','#555','#555','#555','#555'];
+        let barColors = ['#9ca3af','#9ca3af','#9ca3af','#9ca3af','#9ca3af']; // abu-abu tailwind
 
         function updateMiniCandlestick(currentPrice, prevPrice){
             if(prevPrice === 0) return;
@@ -600,11 +670,9 @@
             const isUp = currentPrice >= prevPrice;
             const color = isUp ? '#10b981' : '#ef4444';
 
-            // Geser history
             priceHistory.shift(); priceHistory.push(currentPrice);
             barColors.shift(); barColors.push(color);
 
-            // Update 5 mini bar
             const minPrice = Math.min(...priceHistory.filter(p=>p>0));
             const maxPrice = Math.max(...priceHistory.filter(p=>p>0));
             const range = maxPrice - minPrice || 1;
@@ -616,23 +684,22 @@
                 bar.style.height = Math.round(heightPct)+'px';
                 bar.style.background = barColors[i-1];
                 bar.style.boxShadow = barColors[i-1]==='#10b981'
-                    ? '0 0 4px rgba(16,185,129,0.6)'
-                    : '0 0 4px rgba(239,68,68,0.6)';
+                    ? '0 0 4px rgba(16,185,129,0.4)'
+                    : '0 0 4px rgba(239,68,68,0.4)';
             }
 
-            // Update Panah Arah
             const arrowEl = document.getElementById('price-arrow');
             arrowEl.classList.remove('arrow-up','arrow-down');
-            void arrowEl.offsetWidth; // trigger reflow
+            void arrowEl.offsetWidth; 
             if(isUp){
                 arrowEl.innerHTML = '▲';
                 arrowEl.style.color = '#10b981';
-                arrowEl.style.textShadow = '0 0 8px rgba(16,185,129,0.8)';
+                arrowEl.style.textShadow = '0 0 8px rgba(16,185,129,0.5)';
                 arrowEl.classList.add('arrow-up');
             } else {
                 arrowEl.innerHTML = '▼';
                 arrowEl.style.color = '#ef4444';
-                arrowEl.style.textShadow = '0 0 8px rgba(239,68,68,0.8)';
+                arrowEl.style.textShadow = '0 0 8px rgba(239,68,68,0.5)';
                 arrowEl.classList.add('arrow-down');
             }
         }
@@ -680,7 +747,9 @@
             isIntentionalClose=true;
             if(liveSocket) liveSocket.close();
             if(pollingInterval) clearInterval(pollingInterval);
-            lastPriceValue=0; priceHistory=[0,0,0,0,0]; barColors=['#555','#555','#555','#555','#555'];
+            lastPriceValue=0; 
+            priceHistory=[0,0,0,0,0]; 
+            barColors=['#9ca3af','#9ca3af','#9ca3af','#9ca3af','#9ca3af'];
 
             fetchInstantData(assetKey);
 
@@ -709,23 +778,16 @@
 
             const formatted=currentPrice.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 
-            // ============================================================
-            // KUNCI: warna & arah IKUT PERGERAKAN TICK TERAKHIR
-            // bukan 24h priceChange — supaya mirror candlestick di chart
-            // ============================================================
             const tickUp = lastPriceValue === 0
-                ? (priceChange >= 0)           // fallback saat pertama load
-                : (currentPrice >= lastPriceValue); // real: bandingkan tick
+                ? (priceChange >= 0)           
+                : (currentPrice >= lastPriceValue); 
 
-            // Tanda +/- di kolom perubahan 24h tetap pakai priceChange
             const sign24h = priceChange >= 0 ? '+' : '';
 
-            // Update Mini Candlestick Animasi
             if(lastPriceValue!==0 && currentPrice!==lastPriceValue){
                 updateMiniCandlestick(currentPrice, lastPriceValue);
             }
 
-            // Flash animasi harga (mirror candlestick: hijau naik, merah turun)
             if(lastPriceValue!==0 && currentPrice!==lastPriceValue){
                 priceEl.classList.remove('flash-up','flash-down');
                 void priceEl.offsetWidth;
@@ -740,19 +802,17 @@
 
             const baseClass="px-2 py-0.5 md:px-2 md:py-0.5 min-[2000px]:px-5 min-[2000px]:py-2 rounded-md min-[2000px]:rounded-xl min-w-[85px] md:min-w-[90px] min-[2000px]:min-w-[160px] text-center shadow-sm text-sm md:text-sm min-[2000px]:text-2xl transition-all duration-300 font-mono font-bold";
 
-            // Warna kotak harga = arah tick terakhir (sama seperti kotak harga di kanan chart TradingView)
             if(tickUp){
-                priceEl.className=`${baseClass} bg-[rgba(16,185,129,0.15)] text-emerald-400 border border-emerald-900/50`;
-                changeEl.className="text-emerald-500 font-bold text-xs md:text-xs min-[2000px]:text-xl whitespace-nowrap drop-shadow-[0_0_5px_rgba(16,185,129,0.3)] transition-colors";
+                priceEl.className=`${baseClass} bg-green-100 dark:bg-[rgba(16,185,129,0.15)] text-emerald-600 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-900/50`;
+                changeEl.className="text-emerald-600 dark:text-emerald-500 font-bold text-xs md:text-xs min-[2000px]:text-xl whitespace-nowrap drop-shadow-[0_0_2px_rgba(16,185,129,0.1)] dark:drop-shadow-[0_0_5px_rgba(16,185,129,0.3)] transition-colors";
             } else {
-                priceEl.className=`${baseClass} bg-[rgba(239,68,68,0.15)] text-red-400 border border-red-900/50`;
-                changeEl.className="text-red-500 font-bold text-xs md:text-xs min-[2000px]:text-xl whitespace-nowrap drop-shadow-[0_0_5px_rgba(239,68,68,0.3)] transition-colors";
+                priceEl.className=`${baseClass} bg-red-100 dark:bg-[rgba(239,68,68,0.15)] text-red-600 dark:text-red-400 border border-red-300 dark:border-red-900/50`;
+                changeEl.className="text-red-600 dark:text-red-500 font-bold text-xs md:text-xs min-[2000px]:text-xl whitespace-nowrap drop-shadow-[0_0_2px_rgba(239,68,68,0.1)] dark:drop-shadow-[0_0_5px_rgba(239,68,68,0.3)] transition-colors";
             }
         }
 
         // ==========================================
-        // SWITCHER ASSET & TRADINGVIEW CHART
-        // dengan EMA + Bollinger Bands bawaan
+        // SWITCHER ASSET & TRADINGVIEW CHART (DENGAN DRAWING TOOLS)
         // ==========================================
         const assets={
             XAU: { symbolTV:"OANDA:XAUUSD", title:"XAU/USD" },
@@ -763,25 +823,24 @@
             currentAsset=assetKey;
             const asset=assets[assetKey];
 
-            const activeXAU="px-3 py-0.5 md:px-3 md:py-1 min-[2000px]:px-8 min-[2000px]:py-3 rounded-md min-[2000px]:rounded-lg bg-gradient-to-r from-yellow-600 to-yellow-500 text-white text-[10px] md:text-[11px] min-[2000px]:text-xl font-bold transition-all duration-300 shadow-md transform hover:scale-105 active:scale-95 whitespace-nowrap cursor-pointer";
-            const activeBTC="px-3 py-0.5 md:px-3 md:py-1 min-[2000px]:px-8 min-[2000px]:py-3 rounded-md min-[2000px]:rounded-lg bg-gradient-to-r from-orange-600 to-orange-500 text-white text-[10px] md:text-[11px] min-[2000px]:text-xl font-bold transition-all duration-300 shadow-md transform hover:scale-105 active:scale-95 whitespace-nowrap cursor-pointer";
-            const inactive="px-3 py-0.5 md:px-3 md:py-1 min-[2000px]:px-8 min-[2000px]:py-3 rounded-md min-[2000px]:rounded-lg text-[#787b86] hover:text-white text-[10px] md:text-[11px] min-[2000px]:text-xl font-bold transition-all duration-300 transform hover:bg-white/5 hover:scale-105 active:scale-95 whitespace-nowrap cursor-pointer";
+            const activeXAU="px-3 py-0.5 md:px-3 md:py-1 min-[2000px]:px-8 min-[2000px]:py-3 rounded-md min-[2000px]:rounded-lg bg-gradient-to-r from-yellow-500 to-yellow-400 dark:from-yellow-600 dark:to-yellow-500 text-slate-900 dark:text-white text-[10px] md:text-[11px] min-[2000px]:text-xl font-bold transition-all duration-300 shadow-md transform hover:scale-105 active:scale-95 whitespace-nowrap cursor-pointer";
+            const activeBTC="px-3 py-0.5 md:px-3 md:py-1 min-[2000px]:px-8 min-[2000px]:py-3 rounded-md min-[2000px]:rounded-lg bg-gradient-to-r from-orange-500 to-orange-400 dark:from-orange-600 dark:to-orange-500 text-slate-900 dark:text-white text-[10px] md:text-[11px] min-[2000px]:text-xl font-bold transition-all duration-300 shadow-md transform hover:scale-105 active:scale-95 whitespace-nowrap cursor-pointer";
+            const inactive="px-3 py-0.5 md:px-3 md:py-1 min-[2000px]:px-8 min-[2000px]:py-3 rounded-md min-[2000px]:rounded-lg text-slate-600 dark:text-[#787b86] hover:text-slate-900 dark:hover:text-white text-[10px] md:text-[11px] min-[2000px]:text-xl font-bold transition-all duration-300 transform hover:bg-black/5 dark:hover:bg-white/5 hover:scale-105 active:scale-95 whitespace-nowrap cursor-pointer";
 
             document.getElementById('btn-XAU').className=(assetKey==='XAU')?activeXAU:inactive;
             document.getElementById('btn-BTC').className=(assetKey==='BTC')?activeBTC:inactive;
 
             document.getElementById('custom-ticker-symbol').innerText=asset.title;
             document.getElementById('custom-ticker-price').innerHTML='<span class="animate-pulse">Memuat...</span>';
-            document.getElementById('custom-ticker-price').className="bg-[#1e222d] text-slate-300 px-2 py-0.5 md:px-2 md:py-0.5 min-[2000px]:px-5 min-[2000px]:py-2 rounded-md min-[2000px]:rounded-xl min-w-[85px] md:min-w-[90px] min-[2000px]:min-w-[160px] text-center transition-all duration-300 border border-white/5 text-sm md:text-sm min-[2000px]:text-2xl font-mono";
+            document.getElementById('custom-ticker-price').className="bg-gray-200 dark:bg-[#1e222d] text-slate-700 dark:text-slate-300 px-2 py-0.5 md:px-2 md:py-0.5 min-[2000px]:px-5 min-[2000px]:py-2 rounded-md min-[2000px]:rounded-xl min-w-[85px] md:min-w-[90px] min-[2000px]:min-w-[160px] text-center transition-all duration-300 border border-black/5 dark:border-white/5 text-sm md:text-sm min-[2000px]:text-2xl font-mono";
             document.getElementById('custom-ticker-change').innerText="--";
-            document.getElementById('custom-ticker-change').className="text-slate-400 font-semibold text-xs md:text-xs min-[2000px]:text-xl whitespace-nowrap";
+            document.getElementById('custom-ticker-change').className="text-slate-500 dark:text-slate-400 font-semibold text-xs md:text-xs min-[2000px]:text-xl whitespace-nowrap";
 
-            // Reset panah & mini bars
             const arrowEl=document.getElementById('price-arrow');
-            arrowEl.innerHTML='—'; arrowEl.style.color='#555'; arrowEl.style.textShadow='none';
+            arrowEl.innerHTML='—'; arrowEl.style.color=isLightMode?'#9ca3af':'#555'; arrowEl.style.textShadow='none';
             for(let i=1;i<=5;i++){
                 const b=document.getElementById('mini-bar-'+i);
-                if(b){b.style.height='6px';b.style.background='#555';b.style.boxShadow='none';}
+                if(b){b.style.height='6px';b.style.background=isLightMode?'#d1d5db':'#555';b.style.boxShadow='none';}
             }
 
             if(targetAlertPrice) clearAlert();
@@ -790,55 +849,27 @@
 
             document.getElementById('tradingview_chart').innerHTML='';
 
+            // KONFIGURASI TRADINGVIEW (1 MENIT & SIDE TOOLBAR AKTIF)
             new TradingView.widget({
                 "autosize": true,
                 "symbol": asset.symbolTV,
-                "interval": "60",
+                "interval": "1", // <-- Menggunakan 1 Menit (Interval tercepat standar TV gratis)
                 "timezone": "Asia/Jakarta",
-                "theme": "dark",
+                "theme": isLightMode ? "light" : "dark", // <-- Dynamic Mode Terang/Gelap
                 "style": "1",
                 "locale": "id",
                 "enable_publishing": false,
-                "backgroundColor": "#0b0e14",
-                "gridColor": "#161a25",
+                "backgroundColor": isLightMode ? "#ffffff" : "#0b0e14",
+                "gridColor": isLightMode ? "#f3f4f6" : "#161a25",
                 "hide_top_toolbar": false,
                 "hide_legend": false,
+                "hide_side_toolbar": false, // <-- Menampilkan Drawing Tools (Kiri)
                 "save_image": false,
                 "hide_volume": true,
-
-                // ============================
-                // INDIKATOR BAWAAN:
-                // EMA (20) + EMA (50) + Bollinger Bands
-                // ============================
                 "studies": [
-                    {
-                        "id": "MAExp@tv-basicstudies",
-                        "inputs": { "length": 20 },
-                        "override": {
-                            "Plot.color": "#f59e0b",
-                            "Plot.linewidth": 2
-                        }
-                    },
-                    {
-                        "id": "MAExp@tv-basicstudies",
-                        "inputs": { "length": 50 },
-                        "override": {
-                            "Plot.color": "#60a5fa",
-                            "Plot.linewidth": 2
-                        }
-                    },
-                    {
-                        "id": "BB@tv-basicstudies",
-                        "inputs": { "length": 20, "mult": 2 },
-                        "override": {
-                            "Upper.color":  "#a78bfa",
-                            "Lower.color":  "#a78bfa",
-                            "Middle.color": "#6d28d9",
-                            "Upper.linewidth": 1,
-                            "Lower.linewidth": 1,
-                            "Middle.linewidth": 1
-                        }
-                    }
+                    { "id": "MAExp@tv-basicstudies", "inputs": { "length": 20 }, "override": { "Plot.color": "#f59e0b", "Plot.linewidth": 2 } },
+                    { "id": "MAExp@tv-basicstudies", "inputs": { "length": 50 }, "override": { "Plot.color": "#60a5fa", "Plot.linewidth": 2 } },
+                    { "id": "BB@tv-basicstudies", "inputs": { "length": 20, "mult": 2 }, "override": { "Upper.color": "#a78bfa", "Lower.color": "#a78bfa", "Middle.color": "#6d28d9", "Upper.linewidth": 1, "Lower.linewidth": 1, "Middle.linewidth": 1 } }
                 ],
                 "disabled_features": [
                     "header_screenshot",
@@ -846,7 +877,7 @@
                     "volume_force_overlay"
                 ],
                 "container_id": "tradingview_chart",
-                "toolbar_bg": "#0b0e14"
+                "toolbar_bg": isLightMode ? "#ffffff" : "#0b0e14"
             });
         }
 
