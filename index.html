@@ -144,13 +144,13 @@
         </div>
     </div>
 
-    <!-- OVERLAY RECONNECT -->
-    <div id="reconnect-overlay" class="fixed inset-0 bg-white/80 dark:bg-[#0b0e14]/85 backdrop-blur-sm z-50 flex flex-col justify-center items-center opacity-0 pointer-events-none transition-colors duration-500">
+    <!-- OVERLAY RECONNECT (Z-Index diset 55 agar tidak terganggu komponen lain) -->
+    <div id="reconnect-overlay" class="fixed inset-0 bg-white/80 dark:bg-[#0b0e14]/85 backdrop-blur-sm z-[55] flex flex-col justify-center items-center opacity-0 pointer-events-none transition-colors duration-500">
         <div class="animate-spin rounded-full h-12 w-12 md:h-12 md:w-12 min-[2000px]:h-24 min-[2000px]:w-24 border-t-4 border-b-4 border-yellow-500 mb-4 min-[2000px]:mb-8 shadow-[0_0_20px_rgba(234,179,8,0.5)]"></div>
         <p class="text-yellow-600 dark:text-yellow-400 font-extrabold tracking-[0.2em] text-sm md:text-sm min-[2000px]:text-2xl animate-pulse">MEMULIHKAN DATA TERBARU...</p>
     </div>
 
-    <!-- OVERLAY PASAR TUTUP -->
+    <!-- OVERLAY PASAR TUTUP (Z-Index 40, sehingga menu Header yang Z-50 tetap bisa diklik) -->
     <div id="market-closed-overlay" class="fixed inset-0 bg-white/70 dark:bg-[#0b0e14]/70 backdrop-blur-sm z-40 flex flex-col justify-center items-center opacity-0 pointer-events-none pt-12 md:pt-16 transition-colors duration-500">
         <div class="bg-orange-100/90 dark:bg-orange-900/40 border border-orange-400 dark:border-orange-500/50 p-5 md:p-6 min-[2000px]:p-12 rounded-2xl flex flex-col items-center text-center max-w-[90%] md:max-w-md mx-4 shadow-[0_0_40px_rgba(249,115,22,0.15)]">
             <div class="bg-orange-200 dark:bg-orange-500/20 p-3 md:p-4 min-[2000px]:p-6 rounded-full mb-3 md:mb-4">
@@ -243,7 +243,8 @@
     </div>
 
     <!-- ===================== HEADER ===================== -->
-    <header class="relative z-30 bg-white/90 dark:bg-[#0b0e14]/90 backdrop-blur-lg border-b border-black/5 dark:border-white/5 px-2 py-1.5 md:px-4 md:py-1.5 min-[2000px]:px-8 min-[2000px]:py-5 flex flex-col sm:flex-row justify-between items-center gap-2 sm:gap-4 shadow-[0_4px_15px_rgba(0,0,0,0.05)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.5)] min-h-[44px] md:min-h-[44px] min-[2000px]:min-h-[100px] transition-colors duration-500">
+    <!-- PERUBAHAN Z-INDEX: Saya buat z-50 agar Menu di atas selalu bisa diklik dan tidak ditutupi Layar Pasar Tutup -->
+    <header class="relative z-50 bg-white/90 dark:bg-[#0b0e14]/90 backdrop-blur-lg border-b border-black/5 dark:border-white/5 px-2 py-1.5 md:px-4 md:py-1.5 min-[2000px]:px-8 min-[2000px]:py-5 flex flex-col sm:flex-row justify-between items-center gap-2 sm:gap-4 shadow-[0_4px_15px_rgba(0,0,0,0.05)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.5)] min-h-[44px] md:min-h-[44px] min-[2000px]:min-h-[100px] transition-colors duration-500">
 
         <!-- LOGO -->
         <div class="flex items-center gap-2 md:gap-2.5 min-[2000px]:gap-5 w-full sm:w-auto justify-center sm:justify-start group cursor-default">
@@ -260,6 +261,12 @@
         <!-- TICKER HARGA + INDIKATOR CANDLESTICK ANIMASI -->
         <div class="w-full sm:w-auto flex justify-center items-center gap-1 min-[2000px]:gap-3">
             <div class="flex items-center gap-2 md:gap-2.5 min-[2000px]:gap-5 font-bold tracking-tight bg-black/[0.03] dark:bg-white/[0.03] px-3 py-1 md:px-3 md:py-1 min-[2000px]:px-8 min-[2000px]:py-4 rounded-xl border border-black/5 dark:border-white/5 shadow-inner backdrop-blur-sm transition-colors duration-500">
+                
+                <!-- BINTANG FAVORIT -->
+                <button id="btn-favorite" onclick="toggleFavorite()" class="focus:outline-none flex items-center justify-center transform transition-transform hover:scale-110 active:scale-95" title="Tambah ke Favorit">
+                    <!-- SVG akan di-render via JS -->
+                </button>
+
                 <!-- Nama Simbol -->
                 <span id="custom-ticker-symbol" class="text-slate-900 dark:text-white drop-shadow-md text-sm md:text-sm min-[2000px]:text-2xl">XAU/USD</span>
 
@@ -399,6 +406,41 @@
                 copyWatermark();
             }
         });
+
+        // ==========================================
+        // FITUR BINTANG FAVORIT (LOCALSTORAGE)
+        // ==========================================
+        let favorites = JSON.parse(localStorage.getItem('affannhs_favorites')) || { 'XAU': false, 'BTC': false };
+
+        function toggleFavorite() {
+            // Ubah status favorit saat diklik
+            favorites[currentAsset] = !favorites[currentAsset];
+            // Simpan ke memori browser
+            localStorage.setItem('affannhs_favorites', JSON.stringify(favorites));
+            // Render ulang tampilan bintang
+            renderFavoriteStar();
+        }
+
+        function renderFavoriteStar() {
+            const btn = document.getElementById('btn-favorite');
+            const isFav = favorites[currentAsset];
+            
+            if (isFav) {
+                // Bintang Emas Penuh (Favorit)
+                btn.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 md:h-5 md:w-5 min-[2000px]:h-8 min-[2000px]:w-8 text-yellow-500 drop-shadow-[0_0_5px_rgba(234,179,8,0.6)]" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                `;
+            } else {
+                // Bintang Kosong/Outline (Bukan Favorit)
+                btn.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 md:h-5 md:w-5 min-[2000px]:h-8 min-[2000px]:w-8 text-slate-400 hover:text-yellow-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                    </svg>
+                `;
+            }
+        }
 
         // ==========================================
         // TEMA (LIGHT / DARK MODE)
@@ -830,6 +872,9 @@
             document.getElementById('btn-XAU').className=(assetKey==='XAU')?activeXAU:inactive;
             document.getElementById('btn-BTC').className=(assetKey==='BTC')?activeBTC:inactive;
 
+            // Update UI Bintang Favorit
+            renderFavoriteStar();
+
             document.getElementById('custom-ticker-symbol').innerText=asset.title;
             document.getElementById('custom-ticker-price').innerHTML='<span class="animate-pulse">Memuat...</span>';
             document.getElementById('custom-ticker-price').className="bg-gray-200 dark:bg-[#1e222d] text-slate-700 dark:text-slate-300 px-2 py-0.5 md:px-2 md:py-0.5 min-[2000px]:px-5 min-[2000px]:py-2 rounded-md min-[2000px]:rounded-xl min-w-[85px] md:min-w-[90px] min-[2000px]:min-w-[160px] text-center transition-all duration-300 border border-black/5 dark:border-white/5 text-sm md:text-sm min-[2000px]:text-2xl font-mono";
@@ -849,13 +894,12 @@
 
             document.getElementById('tradingview_chart').innerHTML='';
 
-            // KONFIGURASI TRADINGVIEW (1 Detik / 1S)
-            // PENTING: Timeframe Detik adalah fitur PREMIUM TradingView.
-            // Jika diblokir oleh sistem, chart akan menampilkan tulisan "Invalid Symbol/Interval".
+            // KONFIGURASI TRADINGVIEW (DIKEMBALIKAN KE 1 MENIT)
+            // Fitur drawing tools, garis, dan bintang favorit sekarang TERBUKA LEBAR
             new TradingView.widget({
                 "autosize": true,
                 "symbol": asset.symbolTV,
-                "interval": "1S", // <-- Mencoba memaksakan 1 Detik (1S)
+                "interval": "1", // <-- Mengembalikan ke 1 Menit agar Menu Kiri muncul
                 "timezone": "Asia/Jakarta",
                 "theme": isLightMode ? "light" : "dark",
                 "style": "1",
@@ -868,10 +912,19 @@
                 "hide_side_toolbar": false, 
                 "save_image": false,
                 "hide_volume": true,
+                "favorites": {
+                    "intervals": ["1", "5", "15", "30", "60", "D"],
+                    "chartType": "Candles"
+                },
                 "studies": [
                     { "id": "MAExp@tv-basicstudies", "inputs": { "length": 20 }, "override": { "Plot.color": "#f59e0b", "Plot.linewidth": 2 } },
                     { "id": "MAExp@tv-basicstudies", "inputs": { "length": 50 }, "override": { "Plot.color": "#60a5fa", "Plot.linewidth": 2 } },
                     { "id": "BB@tv-basicstudies", "inputs": { "length": 20, "mult": 2 }, "override": { "Upper.color": "#a78bfa", "Lower.color": "#a78bfa", "Middle.color": "#6d28d9", "Upper.linewidth": 1, "Lower.linewidth": 1, "Middle.linewidth": 1 } }
+                ],
+                // KODE INI YANG BIKIN DRAWING TOOLS BISA MUNCUL WALAU DI HP
+                "enabled_features": [
+                    "keep_left_toolbar_visible_on_small_screens",
+                    "use_localstorage_for_settings"
                 ],
                 "disabled_features": [
                     "header_screenshot",
