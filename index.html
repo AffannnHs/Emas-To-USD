@@ -4,116 +4,140 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AffannnHs Monitor - Live Streaming Chart</title>
-    
-    <!-- Konfigurasi Tailwind untuk mendukung Mode Gelap/Terang manual -->
     <script>
-        tailwind = {
-            config: {
-                darkMode: 'class',
-            }
-        }
+        tailwind = { config: { darkMode: 'class' } }
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+    <script type="text/javascript" src="https://s3.tradingview.com/tv.js" id="tv-script"></script>
     <style>
         body {
-            -webkit-user-select: none;
-            -ms-user-select: none;
-            user-select: none;
-            -webkit-touch-callout: none;
-            height: 100dvh;
-            width: 100vw;
-            margin: 0;
-            padding: 0;
-            overflow: hidden !important;
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            overscroll-behavior: none;
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            touch-action: none;
+            -webkit-user-select: none; -ms-user-select: none; user-select: none;
+            -webkit-touch-callout: none; height: 100dvh; width: 100vw;
+            margin: 0; padding: 0; overflow: hidden !important; position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0; overscroll-behavior: none;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif; touch-action: none;
         }
-
         @media print { body { display: none !important; } }
 
-        /* =============================================
-           ANIMASI FLASH HARGA - MATCHING CANDLESTICK
-           ============================================= */
+        /* ======= FLASH HARGA ======= */
         @keyframes flashUp {
-            0%   { background-color: rgba(16,185,129,0.95); color:#fff; transform:scale(1.08); box-shadow: 0 0 20px rgba(16,185,129,0.8); }
-            60%  { background-color: rgba(16,185,129,0.3);  color:#34d399; transform:scale(1.03); }
-            100% { background-color: rgba(16,185,129,0.15); color:#34d399; transform:scale(1); box-shadow: none; }
+            0%   { background-color:rgba(16,185,129,0.95);color:#fff;transform:scale(1.08);box-shadow:0 0 20px rgba(16,185,129,0.8); }
+            60%  { background-color:rgba(16,185,129,0.3);color:#34d399;transform:scale(1.03); }
+            100% { background-color:rgba(16,185,129,0.15);color:#34d399;transform:scale(1);box-shadow:none; }
         }
         @keyframes flashDown {
-            0%   { background-color: rgba(239,68,68,0.95); color:#fff; transform:scale(1.08); box-shadow: 0 0 20px rgba(239,68,68,0.8); }
-            60%  { background-color: rgba(239,68,68,0.3);  color:#f87171; transform:scale(1.03); }
-            100% { background-color: rgba(239,68,68,0.15); color:#f87171; transform:scale(1); box-shadow: none; }
+            0%   { background-color:rgba(239,68,68,0.95);color:#fff;transform:scale(1.08);box-shadow:0 0 20px rgba(239,68,68,0.8); }
+            60%  { background-color:rgba(239,68,68,0.3);color:#f87171;transform:scale(1.03); }
+            100% { background-color:rgba(239,68,68,0.15);color:#f87171;transform:scale(1);box-shadow:none; }
         }
         .flash-up   { animation: flashUp   0.5s cubic-bezier(0.4,0,0.2,1) forwards; }
         .flash-down { animation: flashDown 0.5s cubic-bezier(0.4,0,0.2,1) forwards; }
 
-        /* ANIMASI PANAH CANDLESTICK */
         @keyframes arrowBounceUp {
-            0%   { opacity:0; transform: translateY(6px) scale(0.7); }
-            50%  { opacity:1; transform: translateY(-3px) scale(1.2); }
-            100% { opacity:1; transform: translateY(0px) scale(1); }
+            0%   { opacity:0;transform:translateY(6px) scale(0.7); }
+            50%  { opacity:1;transform:translateY(-3px) scale(1.2); }
+            100% { opacity:1;transform:translateY(0px) scale(1); }
         }
         @keyframes arrowBounceDown {
-            0%   { opacity:0; transform: translateY(-6px) scale(0.7); }
-            50%  { opacity:1; transform: translateY(3px) scale(1.2); }
-            100% { opacity:1; transform: translateY(0px) scale(1); }
+            0%   { opacity:0;transform:translateY(-6px) scale(0.7); }
+            50%  { opacity:1;transform:translateY(3px) scale(1.2); }
+            100% { opacity:1;transform:translateY(0px) scale(1); }
         }
         .arrow-up   { animation: arrowBounceUp   0.35s cubic-bezier(0.4,0,0.2,1) forwards; }
         .arrow-down { animation: arrowBounceDown 0.35s cubic-bezier(0.4,0,0.2,1) forwards; }
 
-        ::-webkit-scrollbar { width:6px; height:6px; }
+        ::-webkit-scrollbar { width:5px; height:5px; }
         ::-webkit-scrollbar-track { background:transparent; }
-        ::-webkit-scrollbar-thumb { background:rgba(156,163,175,0.5); border-radius:3px; }
-        ::-webkit-scrollbar-thumb:hover { background:rgba(107,114,128,0.8); }
-
+        ::-webkit-scrollbar-thumb { background:rgba(156,163,175,0.4); border-radius:3px; }
+        ::-webkit-scrollbar-thumb:hover { background:rgba(107,114,128,0.7); }
         .text-glow { text-shadow: 0 0 15px rgba(234,179,8,0.8); }
 
-        #reconnect-overlay, #market-closed-overlay, #alert-modal, #alert-triggered-popup {
-            transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.4,0,0.2,1);
+        /* ======= CUSTOM PANEL KANAN ======= */
+        #custom-panel {
+            position: fixed;
+            top: 0; right: 0;
+            width: 300px;
+            height: 100dvh;
+            z-index: 45;
+            transform: translateX(100%);
+            transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
+            display: flex;
+            flex-direction: column;
+        }
+        #custom-panel.panel-open { transform: translateX(0); }
+
+        #panel-tab-btn {
+            position: fixed;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 46;
+            transition: right 0.35s cubic-bezier(0.4,0,0.2,1);
+        }
+        body.panel-is-open #panel-tab-btn { right: 300px; }
+
+        @media (max-width: 640px) {
+            #custom-panel { width: 88vw; max-width: 340px; }
+            body.panel-is-open #panel-tab-btn { right: 88vw; }
         }
 
-        /* =============================================
-           iOS PSEUDO-FULLSCREEN
-           ============================================= */
+        .panel-tab {
+            padding: 4px 9px;
+            font-size: 10px;
+            font-weight: 800;
+            border-radius: 6px;
+            white-space: nowrap;
+            transition: all 0.2s;
+            color: #94a3b8;
+            cursor: pointer;
+            border: 1px solid transparent;
+            letter-spacing: 0.03em;
+        }
+        .panel-tab:hover { color: #cbd5e1; }
+        .panel-tab.active {
+            background: rgba(234,179,8,0.15);
+            color: #eab308;
+            border-color: rgba(234,179,8,0.2);
+        }
+        html:not(.dark) .panel-tab { color: #64748b; }
+        html:not(.dark) .panel-tab:hover { color: #1e293b; }
+        html:not(.dark) .panel-tab.active {
+            background: rgba(234,179,8,0.12);
+            color: #ca8a04;
+            border-color: rgba(234,179,8,0.25);
+        }
+
+        .asset-row-enter {
+            animation: assetRowIn 0.2s ease forwards;
+        }
+        @keyframes assetRowIn {
+            from { opacity:0; transform:translateX(8px); }
+            to   { opacity:1; transform:translateX(0); }
+        }
+
+        /* ======= IOS FULLSCREEN ======= */
         body.ios-fullscreen header,
         body.ios-fullscreen footer,
-        body.ios-fullscreen #stats-bar {
-            display: none !important;
-        }
+        body.ios-fullscreen #stats-bar,
+        body.ios-fullscreen #panel-tab-btn { display: none !important; }
         body.ios-fullscreen main {
-            position: fixed !important;
-            inset: 0 !important;
-            z-index: 9999 !important;
-            height: 100dvh !important;
+            position: fixed !important; inset: 0 !important;
+            z-index: 9999 !important; height: 100dvh !important;
         }
-        body.ios-fullscreen #tradingview_chart {
-            height: 100dvh !important;
-        }
+        body.ios-fullscreen #tradingview_chart { height: 100dvh !important; }
         #ios-fs-exit-btn {
-            display: none;
-            position: fixed;
-            top: 12px;
-            right: 12px;
-            z-index: 10000;
-            background: rgba(234,179,8,0.9);
-            color: #000;
-            border: none;
-            border-radius: 50%;
-            width: 36px;
-            height: 36px;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-            backdrop-filter: blur(4px);
-            box-shadow: 0 0 12px rgba(234,179,8,0.5);
-            align-items: center;
-            justify-content: center;
+            display: none; position: fixed; top: 12px; right: 12px; z-index: 10000;
+            background: rgba(234,179,8,0.9); color: #000; border: none; border-radius: 50%;
+            width: 36px; height: 36px; font-size: 18px; font-weight: bold; cursor: pointer;
+            backdrop-filter: blur(4px); box-shadow: 0 0 12px rgba(234,179,8,0.5);
+            align-items: center; justify-content: center;
         }
         body.ios-fullscreen #ios-fs-exit-btn { display: flex; }
+
+        /* ======= OVERLAY TRANSITIONS ======= */
+        #reconnect-overlay, #market-closed-overlay, #alert-modal, #alert-triggered-popup, #stats-modal {
+            transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.4,0,0.2,1);
+        }
     </style>
 </head>
 <body class="flex flex-col h-screen relative bg-gray-50 dark:bg-[#0b0e14] text-slate-800 dark:text-[#d1d4dc] transition-colors duration-500">
@@ -123,86 +147,76 @@
 
     <!-- WATERMARK -->
     <div class="fixed inset-0 pointer-events-none z-20 flex flex-col justify-center items-center opacity-[0.03] select-none overflow-hidden">
-        <div class="text-slate-900 dark:text-white text-5xl md:text-8xl min-[2000px]:text-[150px] font-black rotate-[-35deg] text-center tracking-[0.2em] uppercase whitespace-nowrap">
-            AffannnHs Monitor
-        </div>
-        <div class="text-slate-900 dark:text-white text-xl md:text-3xl min-[2000px]:text-6xl font-bold rotate-[-35deg] text-center tracking-widest mt-4 md:mt-10 opacity-70 whitespace-nowrap">
-            affanharis03@gmail.com
-        </div>
+        <div class="text-slate-900 dark:text-white text-5xl md:text-8xl font-black rotate-[-35deg] text-center tracking-[0.2em] uppercase whitespace-nowrap">AffannnHs Monitor</div>
+        <div class="text-slate-900 dark:text-white text-xl md:text-3xl font-bold rotate-[-35deg] text-center tracking-widest mt-4 md:mt-10 opacity-70 whitespace-nowrap">affanharis03@gmail.com</div>
     </div>
 
     <!-- POPUP OFFLINE -->
-    <div id="offline-popup" class="fixed top-16 left-1/2 transform -translate-x-1/2 bg-red-600/90 backdrop-blur-md text-white px-5 py-3 md:px-5 md:py-3 min-[2000px]:px-10 min-[2000px]:py-6 rounded-xl shadow-[0_10px_30px_rgba(220,38,38,0.5)] z-[60] flex items-center gap-3 md:gap-3 min-[2000px]:gap-6 transition-all duration-500 opacity-0 pointer-events-none -translate-y-8 border border-red-400/50">
-        <div class="bg-red-500 p-2 min-[2000px]:p-4 rounded-full animate-pulse">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 md:h-5 md:w-5 min-[2000px]:h-10 min-[2000px]:w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 5.636a9 9 0 010 12.728m0 0l-2.829-2.829m2.829 2.829L21 21M15.536 8.464a5 5 0 010 7.072m0 0l-2.829-2.829m-4.243 2.829a4.978 4.978 0 01-1.414-2.83m-1.414 5.658a9 9 0 01-2.167-9.238m7.824 2.167a1 1 0 111.414 1.414m-1.414-1.414L3 3m8.293 8.293l1.414 1.414" />
-            </svg>
+    <div id="offline-popup" class="fixed top-16 left-1/2 transform -translate-x-1/2 bg-red-600/90 backdrop-blur-md text-white px-5 py-3 rounded-xl shadow-[0_10px_30px_rgba(220,38,38,0.5)] z-[60] flex items-center gap-3 transition-all duration-500 opacity-0 pointer-events-none -translate-y-8 border border-red-400/50">
+        <div class="bg-red-500 p-2 rounded-full animate-pulse">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 5.636a9 9 0 010 12.728m0 0l-2.829-2.829m2.829 2.829L21 21M15.536 8.464a5 5 0 010 7.072m0 0l-2.829-2.829m-4.243 2.829a4.978 4.978 0 01-1.414-2.83m-1.414 5.658a9 9 0 01-2.167-9.238m7.824 2.167a1 1 0 111.414 1.414m-1.414-1.414L3 3m8.293 8.293l1.414 1.414" /></svg>
         </div>
         <div>
-            <p class="font-bold text-sm md:text-sm min-[2000px]:text-2xl tracking-wide">Koneksi Terputus!</p>
-            <p class="text-xs md:text-xs min-[2000px]:text-xl text-red-100 opacity-80 mt-0.5">Menunggu sinyal internet...</p>
+            <p class="font-bold text-sm">Koneksi Terputus!</p>
+            <p class="text-xs text-red-100 opacity-80 mt-0.5">Menunggu sinyal internet...</p>
         </div>
     </div>
 
-    <!-- OVERLAY RECONNECT (Z-Index diset 55 agar tidak terganggu komponen lain) -->
+    <!-- OVERLAY RECONNECT -->
     <div id="reconnect-overlay" class="fixed inset-0 bg-white/80 dark:bg-[#0b0e14]/85 backdrop-blur-sm z-[55] flex flex-col justify-center items-center opacity-0 pointer-events-none transition-colors duration-500">
-        <div class="animate-spin rounded-full h-12 w-12 md:h-12 md:w-12 min-[2000px]:h-24 min-[2000px]:w-24 border-t-4 border-b-4 border-yellow-500 mb-4 min-[2000px]:mb-8 shadow-[0_0_20px_rgba(234,179,8,0.5)]"></div>
-        <p class="text-yellow-600 dark:text-yellow-400 font-extrabold tracking-[0.2em] text-sm md:text-sm min-[2000px]:text-2xl animate-pulse">MEMULIHKAN DATA TERBARU...</p>
+        <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-yellow-500 mb-4 shadow-[0_0_20px_rgba(234,179,8,0.5)]"></div>
+        <p class="text-yellow-600 dark:text-yellow-400 font-extrabold tracking-[0.2em] text-sm animate-pulse">MEMULIHKAN DATA TERBARU...</p>
     </div>
 
-    <!-- OVERLAY PASAR TUTUP (Z-Index 40, sehingga menu Header yang Z-50 tetap bisa diklik) -->
+    <!-- OVERLAY PASAR TUTUP -->
     <div id="market-closed-overlay" class="fixed inset-0 bg-white/70 dark:bg-[#0b0e14]/70 backdrop-blur-sm z-40 flex flex-col justify-center items-center opacity-0 pointer-events-none pt-12 md:pt-16 transition-colors duration-500">
-        <div class="bg-orange-100/90 dark:bg-orange-900/40 border border-orange-400 dark:border-orange-500/50 p-5 md:p-6 min-[2000px]:p-12 rounded-2xl flex flex-col items-center text-center max-w-[90%] md:max-w-md mx-4 shadow-[0_0_40px_rgba(249,115,22,0.15)]">
-            <div class="bg-orange-200 dark:bg-orange-500/20 p-3 md:p-4 min-[2000px]:p-6 rounded-full mb-3 md:mb-4">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 md:h-12 md:w-12 min-[2000px]:h-20 min-[2000px]:w-20 text-orange-500 dark:text-orange-400 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+        <div class="bg-orange-100/90 dark:bg-orange-900/40 border border-orange-400 dark:border-orange-500/50 p-5 md:p-6 rounded-2xl flex flex-col items-center text-center max-w-[90%] md:max-w-md mx-4 shadow-[0_0_40px_rgba(249,115,22,0.15)]">
+            <div class="bg-orange-200 dark:bg-orange-500/20 p-3 rounded-full mb-3">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-orange-500 dark:text-orange-400 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
             </div>
-            <h2 class="text-orange-600 dark:text-orange-400 font-extrabold text-lg md:text-xl min-[2000px]:text-4xl mb-2 tracking-widest uppercase">Pasar Sedang Tutup</h2>
-            <p class="text-slate-700 dark:text-slate-300 text-xs md:text-xs min-[2000px]:text-xl mb-4 md:mb-5 min-[2000px]:mb-8 opacity-90 leading-relaxed">
-                Perdagangan Emas (XAU) saat ini sedang dalam jadwal istirahat rutin atau libur akhir pekan.
-            </p>
-            <div class="bg-white/80 dark:bg-[#0b0e14]/80 px-4 py-3 md:px-5 md:py-3 min-[2000px]:px-8 min-[2000px]:py-6 rounded-xl border border-black/10 dark:border-white/5 w-full shadow-inner">
-                <p class="text-slate-500 dark:text-slate-400 text-[10px] md:text-[10px] min-[2000px]:text-lg uppercase tracking-[0.2em] mb-1.5 md:mb-1.5">Akan Buka Kembali Pada:</p>
-                <p id="market-open-time" class="text-yellow-600 dark:text-yellow-400 font-black text-base md:text-lg min-[2000px]:text-3xl drop-shadow-[0_0_8px_rgba(234,179,8,0.5)]">--</p>
+            <h2 class="text-orange-600 dark:text-orange-400 font-extrabold text-lg mb-2 tracking-widest uppercase">Pasar Sedang Tutup</h2>
+            <p class="text-slate-700 dark:text-slate-300 text-xs mb-4 opacity-90 leading-relaxed">Perdagangan Emas (XAU) saat ini sedang dalam jadwal istirahat rutin atau libur akhir pekan.</p>
+            <div class="bg-white/80 dark:bg-[#0b0e14]/80 px-4 py-3 rounded-xl border border-black/10 dark:border-white/5 w-full shadow-inner">
+                <p class="text-slate-500 dark:text-slate-400 text-[10px] uppercase tracking-[0.2em] mb-1.5">Akan Buka Kembali Pada:</p>
+                <p id="market-open-time" class="text-yellow-600 dark:text-yellow-400 font-black text-base drop-shadow-[0_0_8px_rgba(234,179,8,0.5)]">--</p>
             </div>
         </div>
     </div>
 
     <!-- MODAL ALERT HARGA -->
     <div id="alert-modal" class="fixed inset-0 bg-white/80 dark:bg-[#0b0e14]/80 backdrop-blur-md z-[60] flex flex-col justify-center items-center opacity-0 pointer-events-none scale-95 transition-colors duration-500">
-        <div class="bg-white dark:bg-[#161a25] border border-yellow-500/50 dark:border-yellow-500/30 p-5 md:p-6 min-[2000px]:p-10 rounded-2xl shadow-[0_10px_40px_rgba(234,179,8,0.2)] dark:shadow-[0_10px_40px_rgba(234,179,8,0.1)] max-w-[85%] w-80 min-[2000px]:w-[500px]">
-            <div class="flex items-center gap-3 mb-4 min-[2000px]:mb-8">
-                <div class="bg-yellow-100 dark:bg-yellow-500/20 p-2 min-[2000px]:p-4 rounded-lg">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 min-[2000px]:h-8 min-[2000px]:w-8 text-yellow-600 dark:text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+        <div class="bg-white dark:bg-[#161a25] border border-yellow-500/50 dark:border-yellow-500/30 p-5 md:p-6 rounded-2xl shadow-[0_10px_40px_rgba(234,179,8,0.2)] max-w-[85%] w-80">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="bg-yellow-100 dark:bg-yellow-500/20 p-2 rounded-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-600 dark:text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
                 </div>
-                <h3 class="text-slate-900 dark:text-white font-bold text-base min-[2000px]:text-2xl">Atur Alarm Harga</h3>
+                <h3 class="text-slate-900 dark:text-white font-bold text-base">Atur Alarm Harga</h3>
             </div>
-            <p class="text-[11px] md:text-xs min-[2000px]:text-lg text-slate-500 dark:text-slate-400 mb-1">Harga Saat Ini:</p>
-            <p class="text-slate-900 dark:text-white font-mono text-lg min-[2000px]:text-3xl font-bold mb-4 min-[2000px]:mb-6" id="alert-modal-current">--</p>
-            <label class="block text-[11px] md:text-xs min-[2000px]:text-lg text-slate-500 dark:text-slate-400 mb-2">Target Harga Notifikasi:</label>
-            <input type="number" id="alert-input" step="0.01" class="w-full bg-gray-50 dark:bg-[#0b0e14] border border-black/10 dark:border-white/10 text-slate-900 dark:text-white font-mono p-2.5 min-[2000px]:p-4 rounded-lg mb-5 min-[2000px]:mb-8 focus:outline-none focus:border-yellow-500 min-[2000px]:text-xl" placeholder="Contoh: 2750.50">
-            <div class="flex justify-end gap-2 min-[2000px]:gap-4">
-                <button onclick="clearAlert()" id="btn-clear-alert" class="hidden px-4 py-2 text-xs min-[2000px]:text-lg text-red-500 dark:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors font-semibold">Hapus Alarm</button>
-                <button onclick="toggleAlertModal()" class="px-4 py-2 text-xs min-[2000px]:text-lg text-slate-500 dark:text-slate-400 hover:bg-black/5 dark:hover:bg-white/5 rounded-lg transition-colors font-semibold">Batal</button>
-                <button onclick="saveAlert()" class="px-5 py-2 text-xs min-[2000px]:text-lg bg-gradient-to-r from-yellow-500 to-yellow-400 dark:from-yellow-600 dark:to-yellow-500 text-slate-900 dark:text-white rounded-lg hover:opacity-90 transition-opacity font-bold shadow-md">Simpan</button>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400 mb-1">Harga Saat Ini:</p>
+            <p class="text-slate-900 dark:text-white font-mono text-lg font-bold mb-4" id="alert-modal-current">--</p>
+            <label class="block text-[11px] text-slate-500 dark:text-slate-400 mb-2">Target Harga Notifikasi:</label>
+            <input type="number" id="alert-input" step="0.01" class="w-full bg-gray-50 dark:bg-[#0b0e14] border border-black/10 dark:border-white/10 text-slate-900 dark:text-white font-mono p-2.5 rounded-lg mb-5 focus:outline-none focus:border-yellow-500" placeholder="Contoh: 2750.50">
+            <div class="flex justify-end gap-2">
+                <button onclick="clearAlert()" id="btn-clear-alert" class="hidden px-4 py-2 text-xs text-red-500 dark:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors font-semibold">Hapus Alarm</button>
+                <button onclick="toggleAlertModal()" class="px-4 py-2 text-xs text-slate-500 dark:text-slate-400 hover:bg-black/5 dark:hover:bg-white/5 rounded-lg transition-colors font-semibold">Batal</button>
+                <button onclick="saveAlert()" class="px-5 py-2 text-xs bg-gradient-to-r from-yellow-500 to-yellow-400 dark:from-yellow-600 dark:to-yellow-500 text-slate-900 dark:text-white rounded-lg hover:opacity-90 transition-opacity font-bold shadow-md">Simpan</button>
             </div>
         </div>
     </div>
 
     <!-- POPUP ALARM TERCAPAI -->
-    <div id="alert-triggered-popup" class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-yellow-500/95 dark:bg-yellow-600/95 backdrop-blur-xl text-slate-900 dark:text-white px-8 py-6 min-[2000px]:px-14 min-[2000px]:py-10 rounded-2xl shadow-[0_0_60px_rgba(234,179,8,0.5)] z-[70] flex flex-col items-center gap-4 min-[2000px]:gap-8 transition-all duration-500 opacity-0 pointer-events-none scale-90 border border-yellow-400">
-        <div class="bg-yellow-400 dark:bg-yellow-500 p-4 min-[2000px]:p-8 rounded-full animate-bounce shadow-lg">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 min-[2000px]:h-20 min-[2000px]:w-20 text-slate-900 dark:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+    <div id="alert-triggered-popup" class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-yellow-500/95 dark:bg-yellow-600/95 backdrop-blur-xl text-slate-900 dark:text-white px-8 py-6 rounded-2xl shadow-[0_0_60px_rgba(234,179,8,0.5)] z-[70] flex flex-col items-center gap-4 transition-all duration-500 opacity-0 pointer-events-none scale-90 border border-yellow-400">
+        <div class="bg-yellow-400 dark:bg-yellow-500 p-4 rounded-full animate-bounce shadow-lg">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-slate-900 dark:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
         </div>
         <div class="text-center">
-            <p class="font-black text-2xl min-[2000px]:text-5xl tracking-widest uppercase mb-1 min-[2000px]:mb-3">Target Tercapai!</p>
-            <p class="text-base md:text-lg min-[2000px]:text-3xl text-yellow-900 dark:text-yellow-100"><span id="alert-trigger-asset" class="font-bold">XAU/USD</span> telah menyentuh <br><span id="alert-trigger-price" class="font-black text-2xl min-[2000px]:text-4xl">--</span></p>
+            <p class="font-black text-2xl tracking-widest uppercase mb-1">Target Tercapai!</p>
+            <p class="text-base text-yellow-900 dark:text-yellow-100"><span id="alert-trigger-asset" class="font-bold">XAU/USD</span> telah menyentuh <br><span id="alert-trigger-price" class="font-black text-2xl">--</span></p>
         </div>
-        <button onclick="closeTriggeredAlert()" class="mt-2 min-[2000px]:mt-6 bg-slate-900 dark:bg-white text-yellow-400 dark:text-yellow-600 font-black px-8 py-2.5 min-[2000px]:px-12 min-[2000px]:py-4 min-[2000px]:text-2xl rounded-full hover:bg-slate-800 dark:hover:bg-yellow-100 transition transform hover:scale-105 shadow-md">Tutup Alarm</button>
+        <button onclick="closeTriggeredAlert()" class="mt-2 bg-slate-900 dark:bg-white text-yellow-400 dark:text-yellow-600 font-black px-8 py-2.5 rounded-full hover:bg-slate-800 dark:hover:bg-yellow-100 transition transform hover:scale-105 shadow-md">Tutup Alarm</button>
     </div>
 
-    <!-- STATS MODAL (STATISTIK DETAIL) -->
+    <!-- STATS MODAL -->
     <div id="stats-modal" class="fixed inset-0 bg-white/85 dark:bg-[#0b0e14]/85 backdrop-blur-md z-[65] flex flex-col justify-center items-center opacity-0 pointer-events-none scale-95 transition-all duration-400">
         <div class="bg-gray-50 dark:bg-[#0b0e14] border border-black/10 dark:border-white/10 p-6 rounded-2xl shadow-[0_10px_50px_rgba(0,0,0,0.2)] dark:shadow-[0_10px_50px_rgba(0,0,0,0.5)] w-[90%] max-w-md relative">
             <button onclick="toggleStatsModal()" class="absolute top-4 right-4 text-slate-500 hover:text-slate-800 dark:hover:text-white transition-colors">
@@ -215,14 +229,14 @@
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
                         HARGA NAIK (MAX 24H)
                     </p>
-                    <p id="modal-stat-high" class="text-emerald-600 dark:text-emerald-400 font-mono font-black text-2xl drop-shadow-[0_0_4px_rgba(16,185,129,0.2)] dark:drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]">--</p>
+                    <p id="modal-stat-high" class="text-emerald-600 dark:text-emerald-400 font-mono font-black text-2xl">--</p>
                 </div>
                 <div class="border border-rose-500/30 bg-rose-50 dark:bg-rose-500/[0.05] rounded-xl p-4">
                     <p class="text-rose-600 dark:text-rose-500/70 text-[11px] uppercase font-black tracking-tighter mb-1 flex items-center gap-2">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" /></svg>
                         HARGA TURUN (MIN 24H)
                     </p>
-                    <p id="modal-stat-low" class="text-rose-600 dark:text-rose-400 font-mono font-black text-2xl drop-shadow-[0_0_4px_rgba(244,63,94,0.2)] dark:drop-shadow-[0_0_8px_rgba(244,63,94,0.5)]">--</p>
+                    <p id="modal-stat-low" class="text-rose-600 dark:text-rose-400 font-mono font-black text-2xl">--</p>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div class="bg-black/5 dark:bg-white/5 p-3 rounded-lg border border-black/5 dark:border-white/5 text-center">
@@ -242,119 +256,167 @@
         </div>
     </div>
 
+    <!-- =====================================================
+         PANEL MARKET WATCH KUSTOM (KANAN)
+         ===================================================== -->
+    <div id="custom-panel" class="bg-white dark:bg-[#0b0e14] border-l border-black/10 dark:border-white/[0.08] shadow-2xl">
+        <!-- Panel Header -->
+        <div class="flex items-center justify-between px-4 py-3 border-b border-black/5 dark:border-white/5 flex-shrink-0 bg-gray-50 dark:bg-[#080b0f]">
+            <div class="flex items-center gap-2.5">
+                <div class="relative">
+                    <div class="w-2 h-2 rounded-full bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.7)]"></div>
+                    <div class="w-2 h-2 rounded-full bg-yellow-500 absolute inset-0 animate-ping opacity-60"></div>
+                </div>
+                <h3 class="font-black text-sm text-slate-900 dark:text-white tracking-[0.1em] uppercase">Market Watch</h3>
+                <span id="panel-fav-count" class="hidden bg-yellow-500 text-slate-900 text-[9px] font-black px-1.5 py-0.5 rounded-full">0</span>
+            </div>
+            <button onclick="closePanel()" class="text-slate-400 hover:text-slate-700 dark:hover:text-white transition-all p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 hover:rotate-0 group" title="Tutup Panel (atau geser ke kanan)">
+                <!-- Arrow right = slide/close -->
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" /></svg>
+            </button>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="px-3 py-2.5 flex-shrink-0 bg-gray-50 dark:bg-[#080b0f] border-b border-black/5 dark:border-white/5">
+            <div class="relative">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                <input id="panel-search" type="text" placeholder="Cari aset... (BTC, AAPL, EUR...)"
+                    oninput="renderPanel()"
+                    class="w-full bg-white dark:bg-[#1e222d] text-slate-900 dark:text-white text-xs pl-8 pr-4 py-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-yellow-500/60 border border-black/5 dark:border-white/10 placeholder-slate-400 dark:placeholder-slate-600 transition-colors shadow-inner">
+            </div>
+        </div>
+
+        <!-- Category Tabs -->
+        <div class="flex px-2 pt-2 pb-1 gap-1 flex-shrink-0 overflow-x-auto bg-white dark:bg-transparent border-b border-black/5 dark:border-white/5">
+            <button class="panel-tab active" data-tab="Semua"   onclick="setTab('Semua')">Semua</button>
+            <button class="panel-tab"        data-tab="Favorit" onclick="setTab('Favorit')">⭐ Favorit</button>
+            <button class="panel-tab"        data-tab="Kripto"  onclick="setTab('Kripto')">🔶 Kripto</button>
+            <button class="panel-tab"        data-tab="Saham"   onclick="setTab('Saham')">📈 Saham</button>
+            <button class="panel-tab"        data-tab="Forex"   onclick="setTab('Forex')">💱 Forex</button>
+            <button class="panel-tab"        data-tab="Indeks"  onclick="setTab('Indeks')">📊 Indeks</button>
+        </div>
+
+        <!-- Asset List (scrollable) -->
+        <div id="panel-list" class="flex-1 overflow-y-auto px-2 py-2 space-y-0.5">
+            <!-- Rendered by JS -->
+        </div>
+
+        <!-- Panel Footer -->
+        <div class="flex-shrink-0 border-t border-black/5 dark:border-white/5 px-3 py-2 bg-gray-50 dark:bg-[#080b0f]">
+            <p class="text-[9px] text-slate-400 dark:text-slate-600 text-center">
+                Klik ⭐ untuk pin & favorit • Geser kanan untuk tutup
+            </p>
+        </div>
+    </div>
+
+    <!-- TOMBOL TAB PANEL TOGGLE (SELALU TERLIHAT) -->
+    <button id="panel-tab-btn" onclick="togglePanel()"
+        class="bg-yellow-500 hover:bg-yellow-400 dark:bg-yellow-600 dark:hover:bg-yellow-500 text-slate-900 font-black rounded-l-xl shadow-[0_0_20px_rgba(234,179,8,0.3)] transition-all duration-300 flex flex-col items-center justify-center gap-0.5 py-5 px-2 border-l-0 border border-yellow-400/50 hover:shadow-[0_0_25px_rgba(234,179,8,0.5)]"
+        title="Buka/Tutup Market Watch">
+        <!-- Icon -->
+        <svg xmlns="http://www.w3.org/2000/svg" id="panel-tab-icon" class="h-4 w-4 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
+        </svg>
+        <!-- Vertical text via letter-by-letter spans -->
+        <div class="flex flex-col items-center text-[8px] tracking-[0.2em] leading-3 mt-1 uppercase font-black">
+            <span>M</span><span>A</span><span>R</span><span>K</span><span>E</span><span>T</span>
+        </div>
+    </button>
+
     <!-- ===================== HEADER ===================== -->
-    <!-- PERUBAHAN Z-INDEX: Saya buat z-50 agar Menu di atas selalu bisa diklik dan tidak ditutupi Layar Pasar Tutup -->
-    <header class="relative z-50 bg-white/90 dark:bg-[#0b0e14]/90 backdrop-blur-lg border-b border-black/5 dark:border-white/5 px-2 py-1.5 md:px-4 md:py-1.5 min-[2000px]:px-8 min-[2000px]:py-5 flex flex-col sm:flex-row justify-between items-center gap-2 sm:gap-4 shadow-[0_4px_15px_rgba(0,0,0,0.05)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.5)] min-h-[44px] md:min-h-[44px] min-[2000px]:min-h-[100px] transition-colors duration-500">
+    <header class="relative z-50 bg-white/90 dark:bg-[#0b0e14]/90 backdrop-blur-lg border-b border-black/5 dark:border-white/5 px-2 py-1.5 md:px-4 md:py-1.5 flex flex-col sm:flex-row justify-between items-center gap-2 sm:gap-4 shadow-[0_4px_15px_rgba(0,0,0,0.05)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.5)] min-h-[44px] transition-colors duration-500">
 
         <!-- LOGO -->
-        <div class="flex items-center gap-2 md:gap-2.5 min-[2000px]:gap-5 w-full sm:w-auto justify-center sm:justify-start group cursor-default">
-            <div class="bg-gradient-to-tr from-yellow-500 to-yellow-300 dark:from-yellow-600 dark:to-yellow-300 p-1 md:p-1.5 min-[2000px]:p-3 rounded-md shadow-[0_0_10px_rgba(234,179,8,0.2)] dark:shadow-[0_0_10px_rgba(234,179,8,0.4)]">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 md:h-4 md:w-4 min-[2000px]:h-8 min-[2000px]:w-8 text-white dark:text-[#0b0e14]" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-                </svg>
+        <div class="flex items-center gap-2 md:gap-2.5 w-full sm:w-auto justify-center sm:justify-start cursor-default">
+            <div class="bg-gradient-to-tr from-yellow-500 to-yellow-300 dark:from-yellow-600 dark:to-yellow-300 p-1 md:p-1.5 rounded-md shadow-[0_0_10px_rgba(234,179,8,0.3)]">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-white dark:text-[#0b0e14]" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
             </div>
-            <h1 class="text-sm md:text-[15px] min-[2000px]:text-3xl font-extrabold tracking-wider text-slate-900 dark:text-white whitespace-nowrap">
+            <h1 class="text-sm md:text-[15px] font-extrabold tracking-wider text-slate-900 dark:text-white whitespace-nowrap">
                 AffannnHs <span class="bg-clip-text text-transparent bg-gradient-to-r from-yellow-500 to-yellow-400 dark:from-yellow-400 dark:to-yellow-200 text-glow">Monitor</span>
             </h1>
         </div>
 
-        <!-- TICKER HARGA + INDIKATOR CANDLESTICK ANIMASI -->
-        <div class="w-full sm:w-auto flex justify-center items-center gap-1 min-[2000px]:gap-3">
-            <div class="flex items-center gap-2 md:gap-2.5 min-[2000px]:gap-5 font-bold tracking-tight bg-black/[0.03] dark:bg-white/[0.03] px-3 py-1 md:px-3 md:py-1 min-[2000px]:px-8 min-[2000px]:py-4 rounded-xl border border-black/5 dark:border-white/5 shadow-inner backdrop-blur-sm transition-colors duration-500">
-                
+        <!-- TICKER HARGA UTAMA -->
+        <div class="w-full sm:w-auto flex justify-center items-center gap-1" title="Header ini khusus pantauan cepat XAU & BTC">
+            <div class="flex items-center gap-2 md:gap-2.5 font-bold tracking-tight bg-black/[0.03] dark:bg-white/[0.03] px-3 py-1 rounded-xl border border-black/5 dark:border-white/5 shadow-inner backdrop-blur-sm transition-colors duration-500 relative">
+                <span class="absolute -top-2 left-2 bg-yellow-500 text-white text-[8px] font-black px-1.5 rounded uppercase tracking-wider shadow-sm">Main Tracker</span>
                 <!-- BINTANG FAVORIT -->
-                <button id="btn-favorite" onclick="toggleFavorite()" class="focus:outline-none flex items-center justify-center transform transition-transform hover:scale-110 active:scale-95" title="Tambah ke Favorit">
-                    <!-- SVG akan di-render via JS -->
-                </button>
-
-                <!-- Nama Simbol -->
-                <span id="custom-ticker-symbol" class="text-slate-900 dark:text-white drop-shadow-md text-sm md:text-sm min-[2000px]:text-2xl">XAU/USD</span>
-
-                <!-- MINI CANDLESTICK BAR ANIMASI -->
-                <div class="flex items-end gap-[2px] h-4 min-[2000px]:h-7" id="mini-bars-container">
-                    <div id="mini-bar-1" class="w-[3px] min-[2000px]:w-[5px] rounded-sm transition-all duration-200" style="height:6px; background:#9ca3af;"></div>
-                    <div id="mini-bar-2" class="w-[3px] min-[2000px]:w-[5px] rounded-sm transition-all duration-200" style="height:10px; background:#9ca3af;"></div>
-                    <div id="mini-bar-3" class="w-[3px] min-[2000px]:w-[5px] rounded-sm transition-all duration-200" style="height:7px; background:#9ca3af;"></div>
-                    <div id="mini-bar-4" class="w-[3px] min-[2000px]:w-[5px] rounded-sm transition-all duration-200" style="height:9px; background:#9ca3af;"></div>
-                    <div id="mini-bar-5" class="w-[3px] min-[2000px]:w-[5px] rounded-sm transition-all duration-200" style="height:5px; background:#9ca3af;"></div>
+                <button id="btn-favorite" onclick="toggleFavorite()" class="focus:outline-none flex items-center justify-center transform transition-transform hover:scale-110 active:scale-95 mt-1"></button>
+                <!-- Simbol -->
+                <span id="custom-ticker-symbol" class="text-slate-900 dark:text-white drop-shadow-md text-sm mt-1">XAU/USD</span>
+                <!-- MINI BARS -->
+                <div class="flex items-end gap-[2px] h-4 mt-1" id="mini-bars-container">
+                    <div id="mini-bar-1" class="w-[3px] rounded-sm transition-all duration-200" style="height:6px;background:#9ca3af;"></div>
+                    <div id="mini-bar-2" class="w-[3px] rounded-sm transition-all duration-200" style="height:10px;background:#9ca3af;"></div>
+                    <div id="mini-bar-3" class="w-[3px] rounded-sm transition-all duration-200" style="height:7px;background:#9ca3af;"></div>
+                    <div id="mini-bar-4" class="w-[3px] rounded-sm transition-all duration-200" style="height:9px;background:#9ca3af;"></div>
+                    <div id="mini-bar-5" class="w-[3px] rounded-sm transition-all duration-200" style="height:5px;background:#9ca3af;"></div>
                 </div>
-
-                <!-- KOTAK HARGA + PANAH ARAH -->
-                <div class="relative flex items-center gap-1">
-                    <!-- PANAH ARAH -->
-                    <div id="price-arrow" class="text-base min-[2000px]:text-2xl leading-none font-black w-4 min-[2000px]:w-6 text-center select-none text-gray-400 dark:text-gray-600">—</div>
-                    <!-- HARGA -->
-                    <span id="custom-ticker-price" class="bg-red-100 dark:bg-[rgba(239,68,68,0.15)] text-red-600 dark:text-red-400 px-2 py-0.5 md:px-2 md:py-0.5 min-[2000px]:px-5 min-[2000px]:py-2 rounded-md min-[2000px]:rounded-xl min-w-[85px] md:min-w-[90px] min-[2000px]:min-w-[160px] text-center transition-all duration-300 border border-red-200 dark:border-red-900/50 shadow-sm text-sm md:text-sm min-[2000px]:text-2xl font-mono">
+                <!-- HARGA + PANAH -->
+                <div class="relative flex items-center gap-1 mt-1">
+                    <div id="price-arrow" class="text-base leading-none font-black w-4 text-center select-none text-gray-400 dark:text-gray-600">—</div>
+                    <span id="custom-ticker-price" class="bg-red-100 dark:bg-[rgba(239,68,68,0.15)] text-red-600 dark:text-red-400 px-2 py-0.5 rounded-md min-w-[90px] text-center transition-all duration-300 border border-red-200 dark:border-red-900/50 shadow-sm text-sm font-mono">
                         <span class="animate-pulse">Memuat...</span>
                     </span>
                 </div>
-
-                <!-- PERUBAHAN & PERSENTASE -->
-                <span id="custom-ticker-change" class="text-slate-500 dark:text-slate-400 font-semibold text-xs md:text-xs min-[2000px]:text-xl whitespace-nowrap transition-colors duration-300">--</span>
+                <!-- CHANGE -->
+                <span id="custom-ticker-change" class="text-slate-500 dark:text-slate-400 font-semibold text-xs whitespace-nowrap transition-colors duration-300 mt-1">--</span>
             </div>
 
             <!-- TOMBOL ALARM -->
-            <button onclick="toggleAlertModal()" id="btn-alert-icon" class="bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-slate-500 dark:text-slate-400 p-1.5 min-[2000px]:p-4 rounded-lg border border-black/10 dark:border-white/10 transition-colors shadow-inner" title="Atur Alarm Harga">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 md:h-4 md:w-4 min-[2000px]:h-8 min-[2000px]:w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+            <button onclick="toggleAlertModal()" id="btn-alert-icon" class="bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-slate-500 dark:text-slate-400 p-1.5 rounded-lg border border-black/10 dark:border-white/10 transition-colors shadow-inner" title="Atur Alarm Harga">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
             </button>
             <!-- TOMBOL STATS -->
-            <button onclick="toggleStatsModal()" class="bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-slate-500 dark:text-slate-400 p-1.5 min-[2000px]:p-4 rounded-lg border border-black/10 dark:border-white/10 transition-colors shadow-inner" title="Lihat Statistik Detail">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 md:h-4 md:w-4 min-[2000px]:h-8 min-[2000px]:w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+            <button onclick="toggleStatsModal()" class="bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-slate-500 dark:text-slate-400 p-1.5 rounded-lg border border-black/10 dark:border-white/10 transition-colors shadow-inner" title="Statistik Detail">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
             </button>
         </div>
 
         <!-- KANAN: KONEKSI + TEMA + FULLSCREEN + SWITCHER -->
-        <div class="flex flex-col sm:flex-row items-center gap-1.5 md:gap-2.5 min-[2000px]:gap-6 w-full sm:w-auto justify-center sm:justify-end">
-            <div class="flex items-center gap-1.5 md:gap-2 min-[2000px]:gap-5">
+        <div class="flex flex-col sm:flex-row items-center gap-1.5 md:gap-2.5 w-full sm:w-auto justify-center sm:justify-end">
+            <div class="flex items-center gap-1.5 md:gap-2">
                 <!-- STATUS KONEKSI -->
-                <div class="text-[9px] md:text-[9px] min-[2000px]:text-lg uppercase tracking-widest font-bold text-slate-600 dark:text-[#787b86] flex items-center gap-1.5 min-[2000px]:gap-3 whitespace-nowrap transition-colors duration-300 bg-black/5 dark:bg-black/20 px-2 py-0.5 md:px-2 md:py-0.5 min-[2000px]:px-5 min-[2000px]:py-2 rounded-full border border-black/5 dark:border-white/5" id="conn-text-container">
-                    <span class="relative flex h-1.5 w-1.5 md:h-1.5 md:w-1.5 min-[2000px]:h-4 min-[2000px]:w-4" id="conn-dot-wrapper">
+                <div class="text-[9px] uppercase tracking-widest font-bold text-slate-600 dark:text-[#787b86] flex items-center gap-1.5 whitespace-nowrap bg-black/5 dark:bg-black/20 px-2 py-0.5 rounded-full border border-black/5 dark:border-white/5 transition-colors duration-300" id="conn-text-container">
+                    <span class="relative flex h-1.5 w-1.5" id="conn-dot-wrapper">
                         <span id="conn-dot-ping" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                        <span id="conn-dot" class="relative inline-flex rounded-full h-1.5 w-1.5 md:h-1.5 md:w-1.5 min-[2000px]:h-4 min-[2000px]:w-4 bg-emerald-500 shadow-[0_0_8px_#10b981]"></span>
+                        <span id="conn-dot" class="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500 shadow-[0_0_8px_#10b981]"></span>
                     </span>
                     <span id="conn-text">Live Socket Aktif</span>
                 </div>
 
-                <!-- TOMBOL THEME (Terang/Gelap) -->
-                <button onclick="toggleTheme()" class="bg-black/5 dark:bg-black/40 hover:bg-black/10 dark:hover:bg-white/10 text-slate-800 dark:text-white p-1 md:p-1 min-[2000px]:p-3 rounded-md border border-black/10 dark:border-white/20 transition-all duration-300 flex items-center justify-center shadow-sm dark:shadow-[0_0_10px_rgba(255,255,255,0.1)] group" title="Ubah Tema Gelap/Terang">
-                    <!-- Icon Sun (untuk ubah ke light) -->
-                    <svg class="h-4 w-4 md:h-4 md:w-4 min-[2000px]:h-8 min-[2000px]:w-8 hidden dark:block group-hover:scale-110 transition-transform text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                    </svg>
-                    <!-- Icon Moon (untuk ubah ke dark) -->
-                    <svg class="h-4 w-4 md:h-4 md:w-4 min-[2000px]:h-8 min-[2000px]:w-8 block dark:hidden group-hover:scale-110 transition-transform text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                    </svg>
+                <!-- TEMA -->
+                <button onclick="toggleTheme()" class="bg-black/5 dark:bg-black/40 hover:bg-black/10 dark:hover:bg-white/10 text-slate-800 dark:text-white p-1 rounded-md border border-black/10 dark:border-white/20 transition-all duration-300 flex items-center justify-center group" title="Ubah Tema">
+                    <svg class="h-4 w-4 hidden dark:block group-hover:scale-110 transition-transform text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                    <svg class="h-4 w-4 block dark:hidden group-hover:scale-110 transition-transform text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
                 </button>
 
-                <!-- TOMBOL FULLSCREEN -->
-                <button onclick="toggleFullScreen()" id="btn-fullscreen" class="bg-black/5 dark:bg-black/40 hover:bg-black/10 dark:hover:bg-white/10 text-slate-800 dark:text-white p-1 md:p-1 min-[2000px]:p-3 rounded-md border border-black/10 dark:border-white/20 transition-all duration-300 flex items-center justify-center shadow-sm dark:shadow-[0_0_10px_rgba(255,255,255,0.1)] group" title="Layar Penuh">
-                    <svg id="fs-icon-enter" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 md:h-4 md:w-4 min-[2000px]:h-8 min-[2000px]:w-8 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-                    </svg>
-                    <svg id="fs-icon-exit" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 md:h-4 md:w-4 min-[2000px]:h-8 min-[2000px]:w-8 hidden text-yellow-500 dark:text-yellow-400 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20v-6h-6m6 0l-5 5m11-5h6v6m-6-6l5 5M9 4v6H3m6 0L4 5m11 5h6V4m-6 6l5-5" />
-                    </svg>
+                <!-- FULLSCREEN -->
+                <button onclick="toggleFullScreen()" id="btn-fullscreen" class="bg-black/5 dark:bg-black/40 hover:bg-black/10 dark:hover:bg-white/10 text-slate-800 dark:text-white p-1 rounded-md border border-black/10 dark:border-white/20 transition-all duration-300 flex items-center justify-center group" title="Layar Penuh">
+                    <svg id="fs-icon-enter" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
+                    <svg id="fs-icon-exit" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 hidden text-yellow-500 dark:text-yellow-400 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20v-6h-6m6 0l-5 5m11-5h6v6m-6-6l5 5M9 4v6H3m6 0L4 5m11 5h6V4m-6 6l5-5" /></svg>
                 </button>
             </div>
 
-            <!-- SWITCHER ASSET -->
-            <div class="flex bg-black/10 dark:bg-black/40 rounded-lg p-0.5 md:p-0.5 min-[2000px]:p-2 border border-black/5 dark:border-white/10 backdrop-blur-md shadow-inner transition-colors duration-500">
-                <button id="btn-XAU" onclick="switchAsset('XAU')" class="px-3 py-0.5 md:px-3 md:py-1 min-[2000px]:px-8 min-[2000px]:py-3 rounded-md min-[2000px]:rounded-lg bg-gradient-to-r from-yellow-500 to-yellow-400 dark:from-yellow-600 dark:to-yellow-500 text-slate-900 dark:text-white text-[10px] md:text-[11px] min-[2000px]:text-xl font-bold transition-all duration-300 shadow-md transform hover:scale-105 active:scale-95 whitespace-nowrap cursor-pointer">
-                    XAU (Emas)
-                </button>
-                <button id="btn-BTC" onclick="switchAsset('BTC')" class="px-3 py-0.5 md:px-3 md:py-1 min-[2000px]:px-8 min-[2000px]:py-3 rounded-md min-[2000px]:rounded-lg text-slate-600 dark:text-[#787b86] hover:text-slate-900 dark:hover:text-white text-[10px] md:text-[11px] min-[2000px]:text-xl font-bold transition-all duration-300 transform hover:bg-black/5 dark:hover:bg-white/5 hover:scale-105 active:scale-95 whitespace-nowrap cursor-pointer">
-                    BTC (Bitcoin)
-                </button>
+            <!-- SWITCHER XAU/BTC -->
+            <div class="flex bg-black/10 dark:bg-black/40 rounded-lg p-0.5 border border-black/5 dark:border-white/10 backdrop-blur-md shadow-inner transition-colors duration-500">
+                <button id="btn-XAU" onclick="switchAsset('XAU')" class="px-3 py-0.5 md:px-3 md:py-1 rounded-md bg-gradient-to-r from-yellow-500 to-yellow-400 dark:from-yellow-600 dark:to-yellow-500 text-slate-900 dark:text-white text-[10px] md:text-[11px] font-bold transition-all duration-300 shadow-md transform hover:scale-105 active:scale-95 whitespace-nowrap cursor-pointer">XAU (Emas)</button>
+                <button id="btn-BTC" onclick="switchAsset('BTC')" class="px-3 py-0.5 md:px-3 md:py-1 rounded-md text-slate-600 dark:text-[#787b86] hover:text-slate-900 dark:hover:text-white text-[10px] md:text-[11px] font-bold transition-all duration-300 transform hover:bg-black/5 dark:hover:bg-white/5 hover:scale-105 active:scale-95 whitespace-nowrap cursor-pointer">BTC (Bitcoin)</button>
             </div>
         </div>
     </header>
 
     <!-- STATS BAR -->
-    <div id="stats-bar" class="relative z-20 bg-gray-100 dark:bg-[#080b0f] border-b border-black/5 dark:border-white/5 py-1 px-4 min-[2000px]:py-3 flex justify-center gap-4 md:gap-8 min-[2000px]:gap-16 text-[9px] md:text-[10px] min-[2000px]:text-lg text-slate-500 dark:text-slate-400 transition-colors duration-500">
-        <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 hidden sm:block"></span>24H Tertinggi: <span id="stat-high" class="text-slate-800 dark:text-white font-mono font-semibold">--</span></span>
-        <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-red-500 hidden sm:block"></span>24H Terendah: <span id="stat-low" class="text-slate-800 dark:text-white font-mono font-semibold">--</span></span>
-        <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-blue-500 hidden sm:block"></span>Volume: <span id="stat-vol" class="text-slate-800 dark:text-white font-mono font-semibold">--</span></span>
+    <div id="stats-bar" class="relative z-20 bg-gray-100 dark:bg-[#080b0f] border-b border-black/5 dark:border-white/5 py-1 px-4 flex justify-between items-center text-[9px] md:text-[10px] text-slate-500 dark:text-slate-400 transition-colors duration-500">
+        <div class="flex items-center gap-4 md:gap-8">
+            <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 hidden sm:block"></span>24H Tertinggi: <span id="stat-high" class="text-slate-800 dark:text-white font-mono font-semibold">--</span></span>
+            <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-red-500 hidden sm:block"></span>24H Terendah: <span id="stat-low" class="text-slate-800 dark:text-white font-mono font-semibold">--</span></span>
+            <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-blue-500 hidden sm:block"></span>Volume: <span id="stat-vol" class="text-slate-800 dark:text-white font-mono font-semibold">--</span></span>
+        </div>
+        <div class="hidden md:flex items-center gap-1 text-yellow-600 dark:text-yellow-500 font-bold bg-yellow-100/50 dark:bg-yellow-500/10 px-2 py-0.5 rounded animate-pulse">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            Panel Kanan: Klik ◀ untuk Market Watch lengkap semua aset
+        </div>
     </div>
 
     <!-- MAIN CHART -->
@@ -365,586 +427,846 @@
     </main>
 
     <!-- FOOTER -->
-    <footer class="relative z-30 border-t border-black/5 dark:border-white/5 py-1.5 md:py-1.5 min-[2000px]:py-4 px-3 md:px-4 min-[2000px]:px-10 flex justify-between items-center text-[9px] md:text-[9px] min-[2000px]:text-lg bg-white/90 dark:bg-[#0b0e14]/90 backdrop-blur-md transition-colors duration-500">
+    <footer class="relative z-30 border-t border-black/5 dark:border-white/5 py-1.5 px-3 md:px-4 flex justify-between items-center text-[9px] bg-white/90 dark:bg-[#0b0e14]/90 backdrop-blur-md transition-colors duration-500">
         <p class="text-slate-500 dark:text-[#787b86] font-medium tracking-wide">
             Design & Engine <span class="bg-clip-text text-transparent bg-gradient-to-r from-yellow-500 to-orange-400 dark:from-yellow-400 dark:to-orange-500 font-extrabold tracking-widest animate-pulse ml-1 text-glow">By AffannnHs</span>
         </p>
-        <p class="text-slate-500/70 dark:text-[#787b86]/70 flex items-center gap-1 min-[2000px]:gap-2 font-medium">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 md:h-3 md:w-3 min-[2000px]:h-6 min-[2000px]:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
+        <p class="text-slate-500/70 dark:text-[#787b86]/70 flex items-center gap-1 font-medium">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
             Powered by TradingView
         </p>
     </footer>
 
-    <script type="text/javascript">
-        // ==========================================
-        // KEAMANAN & CLIPBOARD
-        // ==========================================
-        document.addEventListener('contextmenu', function(e){ e.preventDefault(); });
-        document.ondragstart = function(){ return false; };
-        function copyWatermark() {
-            try {
-                const ta = document.createElement("textarea");
-                ta.value = 'Hak cipta dilindungi oleh Affan Haris Saputra - affanharis03@gmail.com';
-                ta.style.position = "fixed"; ta.style.opacity = "0";
-                document.body.appendChild(ta); ta.select();
-                document.execCommand('copy');
-                document.body.removeChild(ta);
-            } catch (err) { console.warn('Clipboard di-block.'); }
-        }
-        document.addEventListener('keydown', function(e) {
-            if (e.key==='F12'||e.keyCode===123){e.preventDefault();return false;}
-            if (e.ctrlKey&&e.shiftKey&&['I','J','C'].includes(e.key.toUpperCase())){e.preventDefault();return false;}
-            if (e.ctrlKey&&['U','C','S'].includes(e.key.toUpperCase())){e.preventDefault();return false;}
-            if (e.key==='PrintScreen'||e.keyCode===44){
-                copyWatermark();
-            }
+    <script>
+    /* ========================================================
+       KEAMANAN & CLIPBOARD
+       ======================================================== */
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    document.ondragstart = () => false;
+    function copyWatermark() {
+        try {
+            const ta = document.createElement("textarea");
+            ta.value = 'Hak cipta dilindungi oleh Affan Haris Saputra - affanharis03@gmail.com';
+            ta.style.position = "fixed"; ta.style.opacity = "0";
+            document.body.appendChild(ta); ta.select();
+            document.execCommand('copy'); document.body.removeChild(ta);
+        } catch(e) {}
+    }
+    document.addEventListener('keydown', e => {
+        if(e.key==='F12'||e.keyCode===123){e.preventDefault();return false;}
+        if(e.ctrlKey&&e.shiftKey&&['I','J','C'].includes(e.key.toUpperCase())){e.preventDefault();return false;}
+        if(e.ctrlKey&&['U','C','S'].includes(e.key.toUpperCase())){e.preventDefault();return false;}
+        if(e.key==='PrintScreen'||e.keyCode===44) copyWatermark();
+    });
+    document.addEventListener('keyup', e => { if(e.key==='PrintScreen'||e.keyCode===44) copyWatermark(); });
+
+    /* ========================================================
+       DATA ASET LENGKAP
+       ======================================================== */
+    const TV_LOGO = 'https://s3-symbol-logo.tradingview.com/';
+
+    const assetLibrary = [
+        // KRIPTO
+        { id:'XAU',   symbol:'XAU/USD',    name:'Emas (Gold)',       tv:'OANDA:XAUUSD',        category:'Kripto',  binance:'PAXGUSDT',     logo: TV_LOGO+'metal/gold--big.svg' },
+        { id:'BTC',   symbol:'BTC/USD',    name:'Bitcoin',           tv:'BINANCE:BTCUSDT',     category:'Kripto',  binance:'BTCUSDT',      logo: TV_LOGO+'crypto/XTVCBTC--big.svg' },
+        { id:'ETH',   symbol:'ETH/USD',    name:'Ethereum',          tv:'BINANCE:ETHUSDT',     category:'Kripto',  binance:'ETHUSDT',      logo: TV_LOGO+'crypto/XTVCETH--big.svg' },
+        { id:'SOL',   symbol:'SOL/USD',    name:'Solana',            tv:'BINANCE:SOLUSDT',     category:'Kripto',  binance:'SOLUSDT',      logo: TV_LOGO+'crypto/XTVCSOL--big.svg' },
+        { id:'BNB',   symbol:'BNB/USD',    name:'BNB',               tv:'BINANCE:BNBUSDT',     category:'Kripto',  binance:'BNBUSDT',      logo: TV_LOGO+'crypto/XTVCBNB--big.svg' },
+        { id:'XRP',   symbol:'XRP/USD',    name:'Ripple (XRP)',      tv:'BINANCE:XRPUSDT',     category:'Kripto',  binance:'XRPUSDT',      logo: TV_LOGO+'crypto/XTVCXRP--big.svg' },
+        { id:'ADA',   symbol:'ADA/USD',    name:'Cardano',           tv:'BINANCE:ADAUSDT',     category:'Kripto',  binance:'ADAUSDT',      logo: TV_LOGO+'crypto/XTVCADA--big.svg' },
+        { id:'DOGE',  symbol:'DOGE/USD',   name:'Dogecoin',          tv:'BINANCE:DOGEUSDT',    category:'Kripto',  binance:'DOGEUSDT',     logo: TV_LOGO+'crypto/XTVCDOGE--big.svg' },
+        { id:'AVAX',  symbol:'AVAX/USD',   name:'Avalanche',         tv:'BINANCE:AVAXUSDT',    category:'Kripto',  binance:'AVAXUSDT',     logo: TV_LOGO+'crypto/XTVCAVAX--big.svg' },
+        { id:'DOT',   symbol:'DOT/USD',    name:'Polkadot',          tv:'BINANCE:DOTUSDT',     category:'Kripto',  binance:'DOTUSDT',      logo: TV_LOGO+'crypto/XTVCDOT--big.svg' },
+        { id:'LINK',  symbol:'LINK/USD',   name:'Chainlink',         tv:'BINANCE:LINKUSDT',    category:'Kripto',  binance:'LINKUSDT',     logo: TV_LOGO+'crypto/XTVCLINK--big.svg' },
+        { id:'UNI',   symbol:'UNI/USD',    name:'Uniswap',           tv:'BINANCE:UNIUSDT',     category:'Kripto',  binance:'UNIUSDT',      logo: TV_LOGO+'crypto/XTVCUNI--big.svg' },
+        { id:'MATIC', symbol:'POL/USD',    name:'Polygon',           tv:'BINANCE:MATICUSDT',   category:'Kripto',  binance:'MATICUSDT',    logo: TV_LOGO+'crypto/XTVCMATIC--big.svg' },
+        { id:'LTC',   symbol:'LTC/USD',    name:'Litecoin',          tv:'BINANCE:LTCUSDT',     category:'Kripto',  binance:'LTCUSDT',      logo: TV_LOGO+'crypto/XTVCLTC--big.svg' },
+        { id:'SHIB',  symbol:'SHIB/USD',   name:'Shiba Inu',         tv:'BINANCE:SHIBUSDT',    category:'Kripto',  binance:'SHIBUSDT',     logo: TV_LOGO+'crypto/XTVCSHIB--big.svg' },
+        { id:'TON',   symbol:'TON/USD',    name:'Toncoin',           tv:'BINANCE:TONUSDT',     category:'Kripto',  binance:'TONUSDT',      logo: TV_LOGO+'crypto/XTVCTON--big.svg' },
+        { id:'PEPE',  symbol:'PEPE/USD',   name:'Pepe',              tv:'BINANCE:PEPEUSDT',    category:'Kripto',  binance:'1000PEPEUSDT', logo: TV_LOGO+'crypto/XTVCPEPE--big.svg' },
+        { id:'NEAR',  symbol:'NEAR/USD',   name:'NEAR Protocol',     tv:'BINANCE:NEARUSDT',    category:'Kripto',  binance:'NEARUSDT',     logo: TV_LOGO+'crypto/XTVCNEAR--big.svg' },
+        { id:'ATOM',  symbol:'ATOM/USD',   name:'Cosmos',            tv:'BINANCE:ATOMUSDT',    category:'Kripto',  binance:'ATOMUSDT',     logo: TV_LOGO+'crypto/XTVCCOSMOS--big.svg' },
+        { id:'FIL',   symbol:'FIL/USD',    name:'Filecoin',          tv:'BINANCE:FILUSDT',     category:'Kripto',  binance:'FILUSDT',      logo: TV_LOGO+'crypto/XTVCFIL--big.svg' },
+        { id:'APT',   symbol:'APT/USD',    name:'Aptos',             tv:'BINANCE:APTUSDT',     category:'Kripto',  binance:'APTUSDT',      logo: TV_LOGO+'crypto/XTVCAPT--big.svg' },
+        { id:'ARB',   symbol:'ARB/USD',    name:'Arbitrum',          tv:'BINANCE:ARBUSDT',     category:'Kripto',  binance:'ARBUSDT',      logo: TV_LOGO+'crypto/XTVCARB--big.svg' },
+        // SAHAM US
+        { id:'AAPL',  symbol:'AAPL',       name:'Apple Inc.',        tv:'NASDAQ:AAPL',         category:'Saham',   logo: TV_LOGO+'apple--big.svg' },
+        { id:'TSLA',  symbol:'TSLA',       name:'Tesla',             tv:'NASDAQ:TSLA',         category:'Saham',   logo: TV_LOGO+'tesla--big.svg' },
+        { id:'NVDA',  symbol:'NVDA',       name:'NVIDIA Corp.',      tv:'NASDAQ:NVDA',         category:'Saham',   logo: TV_LOGO+'nvidia--big.svg' },
+        { id:'MSFT',  symbol:'MSFT',       name:'Microsoft',         tv:'NASDAQ:MSFT',         category:'Saham',   logo: TV_LOGO+'microsoft--big.svg' },
+        { id:'GOOGL', symbol:'GOOGL',      name:'Alphabet (Google)', tv:'NASDAQ:GOOGL',        category:'Saham',   logo: TV_LOGO+'alphabet--big.svg' },
+        { id:'AMZN',  symbol:'AMZN',       name:'Amazon',            tv:'NASDAQ:AMZN',         category:'Saham',   logo: TV_LOGO+'amazon--big.svg' },
+        { id:'META',  symbol:'META',       name:'Meta Platforms',    tv:'NASDAQ:META',         category:'Saham',   logo: TV_LOGO+'meta-platforms--big.svg' },
+        { id:'NFLX',  symbol:'NFLX',       name:'Netflix',           tv:'NASDAQ:NFLX',         category:'Saham',   logo: TV_LOGO+'netflix--big.svg' },
+        { id:'AMD',   symbol:'AMD',        name:'Advanced Micro Dev',tv:'NASDAQ:AMD',          category:'Saham',   logo: TV_LOGO+'advanced-micro-devices--big.svg' },
+        { id:'INTC',  symbol:'INTC',       name:'Intel Corp.',       tv:'NASDAQ:INTC',         category:'Saham',   logo: TV_LOGO+'intel--big.svg' },
+        { id:'JPM',   symbol:'JPM',        name:'JPMorgan Chase',    tv:'NYSE:JPM',            category:'Saham',   logo: TV_LOGO+'jpmorgan-chase--big.svg' },
+        { id:'BABA',  symbol:'BABA',       name:'Alibaba Group',     tv:'NYSE:BABA',           category:'Saham',   logo: TV_LOGO+'alibaba--big.svg' },
+        { id:'DIS',   symbol:'DIS',        name:'Walt Disney Co.',   tv:'NYSE:DIS',            category:'Saham',   logo: TV_LOGO+'walt-disney--big.svg' },
+        { id:'V',     symbol:'V',          name:'Visa Inc.',         tv:'NYSE:V',              category:'Saham',   logo: TV_LOGO+'visa--big.svg' },
+        { id:'PYPL',  symbol:'PYPL',       name:'PayPal Holdings',   tv:'NASDAQ:PYPL',         category:'Saham',   logo: TV_LOGO+'paypal--big.svg' },
+        { id:'COIN',  symbol:'COIN',       name:'Coinbase Global',   tv:'NASDAQ:COIN',         category:'Saham',   logo: TV_LOGO+'coinbase--big.svg' },
+        // FOREX
+        { id:'EURUSD',symbol:'EUR/USD',    name:'Euro / Dollar',     tv:'OANDA:EURUSD',        category:'Forex',   logo: TV_LOGO+'country/EU--big.svg', logo2: TV_LOGO+'country/US--big.svg' },
+        { id:'GBPUSD',symbol:'GBP/USD',    name:'Pound / Dollar',    tv:'OANDA:GBPUSD',        category:'Forex',   logo: TV_LOGO+'country/GB--big.svg', logo2: TV_LOGO+'country/US--big.svg' },
+        { id:'USDJPY',symbol:'USD/JPY',    name:'Dollar / Yen',      tv:'OANDA:USDJPY',        category:'Forex',   logo: TV_LOGO+'country/US--big.svg', logo2: TV_LOGO+'country/JP--big.svg' },
+        { id:'USDIDR',symbol:'USD/IDR',    name:'Dollar / Rupiah',   tv:'OANDA:USDIDR',        category:'Forex',   logo: TV_LOGO+'country/US--big.svg', logo2: TV_LOGO+'country/ID--big.svg' },
+        { id:'AUDUSD',symbol:'AUD/USD',    name:'Aussie / Dollar',   tv:'OANDA:AUDUSD',        category:'Forex',   logo: TV_LOGO+'country/AU--big.svg', logo2: TV_LOGO+'country/US--big.svg' },
+        { id:'USDCHF',symbol:'USD/CHF',    name:'Dollar / Franc',    tv:'OANDA:USDCHF',        category:'Forex',   logo: TV_LOGO+'country/US--big.svg', logo2: TV_LOGO+'country/CH--big.svg' },
+        { id:'EURJPY',symbol:'EUR/JPY',    name:'Euro / Yen',        tv:'OANDA:EURJPY',        category:'Forex',   logo: TV_LOGO+'country/EU--big.svg', logo2: TV_LOGO+'country/JP--big.svg' },
+        { id:'NZDUSD',symbol:'NZD/USD',    name:'Kiwi / Dollar',     tv:'OANDA:NZDUSD',        category:'Forex',   logo: TV_LOGO+'country/NZ--big.svg', logo2: TV_LOGO+'country/US--big.svg' },
+        { id:'USDCAD',symbol:'USD/CAD',    name:'Dollar / Loonie',   tv:'OANDA:USDCAD',        category:'Forex',   logo: TV_LOGO+'country/US--big.svg', logo2: TV_LOGO+'country/CA--big.svg' },
+        { id:'GBPJPY',symbol:'GBP/JPY',    name:'Pound / Yen',       tv:'OANDA:GBPJPY',        category:'Forex',   logo: TV_LOGO+'country/GB--big.svg', logo2: TV_LOGO+'country/JP--big.svg' },
+        { id:'EURGBP',symbol:'EUR/GBP',    name:'Euro / Pound',      tv:'OANDA:EURGBP',        category:'Forex',   logo: TV_LOGO+'country/EU--big.svg', logo2: TV_LOGO+'country/GB--big.svg' },
+        { id:'XAGUSD',symbol:'XAG/USD',    name:'Silver / Dollar',   tv:'OANDA:XAGUSD',        category:'Forex',   logo: TV_LOGO+'metal/silver--big.svg' },
+        // INDEKS
+        { id:'SPX',   symbol:'S&P 500',    name:'S&P 500 Index',     tv:'SP:SPX',              category:'Indeks',  logo: TV_LOGO+'indices/s-p-500--big.svg' },
+        { id:'NDX',   symbol:'NASDAQ 100', name:'NASDAQ 100',        tv:'NASDAQ:NDX',          category:'Indeks',  logo: TV_LOGO+'indices/nasdaq-100--big.svg' },
+        { id:'DJI',   symbol:'DOW JONES',  name:'Dow Jones Ind.',    tv:'DJ:DJI',              category:'Indeks',  logo: TV_LOGO+'indices/dow-30--big.svg' },
+        { id:'DXY',   symbol:'DXY',        name:'US Dollar Index',   tv:'TVC:DXY',             category:'Indeks',  logo: TV_LOGO+'country/US--big.svg' },
+        { id:'VIX',   symbol:'VIX',        name:'Volatility Index',  tv:'CBOE:VIX',            category:'Indeks',  logo: TV_LOGO+'indices/volatility-s-p-500--big.svg' },
+        { id:'IHSG',  symbol:'IHSG',       name:'IDX Composite',     tv:'IDX:COMPOSITE',       category:'Indeks',  logo: TV_LOGO+'country/ID--big.svg' },
+        { id:'N225',  symbol:'NIKKEI 225', name:'Nikkei 225',        tv:'INDEX:NKY',           category:'Indeks',  logo: TV_LOGO+'country/JP--big.svg' },
+        { id:'FTSE',  symbol:'FTSE 100',   name:'FTSE 100 UK',       tv:'INDEX:UKX',           category:'Indeks',  logo: TV_LOGO+'country/GB--big.svg' },
+        { id:'DAX',   symbol:'DAX 40',     name:'DAX Germany',       tv:'XETR:DAX',            category:'Indeks',  logo: TV_LOGO+'country/DE--big.svg' },
+        { id:'CAC',   symbol:'CAC 40',     name:'CAC 40 France',     tv:'INDEX:CAC40',         category:'Indeks',  logo: TV_LOGO+'country/FR--big.svg' },
+        { id:'HSI',   symbol:'HANG SENG',  name:'Hang Seng HK',      tv:'HSI:HSI',             category:'Indeks',  logo: TV_LOGO+'country/HK--big.svg' },
+    ];
+
+    /* ========================================================
+       STATE
+       ======================================================== */
+    let currentAsset = 'XAU';
+    let currentChartTVSymbol = 'OANDA:XAUUSD';
+    let isLightMode = false;
+    let panelOpen = false;
+    let currentPanelTab = 'Semua';
+    let panelFavorites = JSON.parse(localStorage.getItem('affannhs_panel_favs') || '[]');
+    let favorites = JSON.parse(localStorage.getItem('affannhs_favorites') || '{"XAU":false,"BTC":false}');
+    let pollingInterval = null, liveSocket = null, isIntentionalClose = false, lastPriceValue = 0;
+    let priceHistory = [0,0,0,0,0];
+    let barColors = ['#9ca3af','#9ca3af','#9ca3af','#9ca3af','#9ca3af'];
+    let targetAlertPrice = null, alertCondition = null;
+    let sessionStats = { count: 0, sum: 0, sHigh: -Infinity, sLow: Infinity };
+    let audioCtx;
+
+    const assets = {
+        XAU: { symbolTV: 'OANDA:XAUUSD',    title: 'XAU/USD' },
+        BTC: { symbolTV: 'BINANCE:BTCUSDT',  title: 'BTC/USD' }
+    };
+
+    /* ========================================================
+       PANEL: TOGGLE / OPEN / CLOSE
+       ======================================================== */
+    function togglePanel() {
+        panelOpen ? closePanel() : openPanel();
+    }
+    function openPanel() {
+        panelOpen = true;
+        document.getElementById('custom-panel').classList.add('panel-open');
+        document.body.classList.add('panel-is-open');
+        const icon = document.getElementById('panel-tab-icon');
+        if (icon) icon.style.transform = 'scaleX(-1)';
+        renderPanel();
+    }
+    function closePanel() {
+        panelOpen = false;
+        document.getElementById('custom-panel').classList.remove('panel-open');
+        document.body.classList.remove('panel-is-open');
+        const icon = document.getElementById('panel-tab-icon');
+        if (icon) icon.style.transform = 'scaleX(1)';
+    }
+
+    /* Touch swipe right on panel → close */
+    (function() {
+        let startX = 0, startY = 0;
+        const panel = document.getElementById('custom-panel');
+        panel.addEventListener('touchstart', e => {
+            startX = e.touches[0].clientX;
+            startY = e.touches[0].clientY;
+        }, { passive: true });
+        panel.addEventListener('touchend', e => {
+            const dx = e.changedTouches[0].clientX - startX;
+            const dy = Math.abs(e.changedTouches[0].clientY - startY);
+            if (dx > 55 && dy < 60) closePanel();
+        }, { passive: true });
+    })();
+
+    /* ========================================================
+       PANEL: TABS & RENDER
+       ======================================================== */
+    function setTab(tab) {
+        currentPanelTab = tab;
+        document.querySelectorAll('.panel-tab').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.tab === tab);
         });
-        document.addEventListener('keyup', function(e){
-            if (e.key==='PrintScreen'||e.keyCode===44){
-                copyWatermark();
+        renderPanel();
+    }
+
+    function renderPanel() {
+        const search = (document.getElementById('panel-search')?.value || '').toLowerCase().trim();
+        let list = [...assetLibrary];
+
+        if (currentPanelTab === 'Favorit') {
+            list = list.filter(a => panelFavorites.includes(a.id));
+        } else if (currentPanelTab !== 'Semua') {
+            list = list.filter(a => a.category === currentPanelTab);
+        }
+
+        if (search) {
+            list = list.filter(a =>
+                a.symbol.toLowerCase().includes(search) ||
+                a.name.toLowerCase().includes(search) ||
+                a.id.toLowerCase().includes(search)
+            );
+        }
+
+        const container = document.getElementById('panel-list');
+        if (!container) return;
+
+        if (list.length === 0) {
+            container.innerHTML = `
+                <div class="flex flex-col items-center justify-center py-10 gap-2">
+                    <div class="text-3xl opacity-30">🔍</div>
+                    <p class="text-slate-400 dark:text-slate-600 text-xs text-center">Tidak ada aset ditemukan<br><span class="text-[10px] opacity-60">Coba kata kunci lain</span></p>
+                </div>`;
+            return;
+        }
+
+        const pinned   = list.filter(a => panelFavorites.includes(a.id));
+        const notPinned = list.filter(a => !panelFavorites.includes(a.id));
+
+        let html = '';
+
+        if (pinned.length > 0 && !search && currentPanelTab !== 'Favorit') {
+            html += `<div class="flex items-center gap-1.5 px-2 py-1.5 mt-1">
+                <span class="text-[8px] uppercase tracking-widest text-yellow-600 dark:text-yellow-500 font-black">📌 Disematkan</span>
+                <div class="flex-1 h-px bg-yellow-500/20"></div>
+            </div>`;
+            html += pinned.map(a => renderAssetRow(a)).join('');
+            if (notPinned.length > 0) {
+                html += `<div class="flex items-center gap-1.5 px-2 py-1.5 mt-2">
+                    <span class="text-[8px] uppercase tracking-widest text-slate-400 dark:text-slate-600 font-black">Lainnya</span>
+                    <div class="flex-1 h-px bg-black/10 dark:bg-white/5"></div>
+                </div>`;
             }
-        });
-
-        // ==========================================
-        // FITUR BINTANG FAVORIT (LOCALSTORAGE)
-        // ==========================================
-        let favorites = JSON.parse(localStorage.getItem('affannhs_favorites')) || { 'XAU': false, 'BTC': false };
-
-        function toggleFavorite() {
-            // Ubah status favorit saat diklik
-            favorites[currentAsset] = !favorites[currentAsset];
-            // Simpan ke memori browser
-            localStorage.setItem('affannhs_favorites', JSON.stringify(favorites));
-            // Render ulang tampilan bintang
-            renderFavoriteStar();
-        }
-
-        function renderFavoriteStar() {
-            const btn = document.getElementById('btn-favorite');
-            const isFav = favorites[currentAsset];
-            
-            if (isFav) {
-                // Bintang Emas Penuh (Favorit)
-                btn.innerHTML = `
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 md:h-5 md:w-5 min-[2000px]:h-8 min-[2000px]:w-8 text-yellow-500 drop-shadow-[0_0_5px_rgba(234,179,8,0.6)]" viewBox="0 0 20 20" fill="currentColor">
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
-                `;
-            } else {
-                // Bintang Kosong/Outline (Bukan Favorit)
-                btn.innerHTML = `
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 md:h-5 md:w-5 min-[2000px]:h-8 min-[2000px]:w-8 text-slate-400 hover:text-yellow-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-                    </svg>
-                `;
-            }
-        }
-
-        // ==========================================
-        // TEMA (LIGHT / DARK MODE)
-        // ==========================================
-        let isLightMode = false;
-        function toggleTheme() {
-            isLightMode = !isLightMode;
-            if(isLightMode) {
-                document.documentElement.classList.remove('dark');
-            } else {
-                document.documentElement.classList.add('dark');
-            }
-            // Re-render chart untuk mengaplikasikan warna tema TV
-            switchAsset(currentAsset);
-        }
-
-        // ==========================================
-        // AUDIO ALARM
-        // ==========================================
-        let audioCtx;
-        function initAudio(){
-            if(!audioCtx) audioCtx=new(window.AudioContext||window.webkitAudioContext)();
-            if(audioCtx.state==='suspended') audioCtx.resume();
-        }
-        function playAlertSound(){
-            try{
-                if(!audioCtx) initAudio();
-                for(let i=0;i<3;i++){
-                    const osc=audioCtx.createOscillator();
-                    const gain=audioCtx.createGain();
-                    osc.connect(gain); gain.connect(audioCtx.destination);
-                    osc.type='square'; osc.frequency.setValueAtTime(880,audioCtx.currentTime+(i*0.3));
-                    gain.gain.setValueAtTime(0,audioCtx.currentTime+(i*0.3));
-                    gain.gain.linearRampToValueAtTime(0.5,audioCtx.currentTime+(i*0.3)+0.05);
-                    gain.gain.linearRampToValueAtTime(0,audioCtx.currentTime+(i*0.3)+0.2);
-                    osc.start(audioCtx.currentTime+(i*0.3));
-                    osc.stop(audioCtx.currentTime+(i*0.3)+0.2);
-                }
-            }catch(e){console.log("Audio not supported");}
-        }
-
-        // ==========================================
-        // PRICE ALERT
-        // ==========================================
-        let targetAlertPrice=null, alertCondition=null;
-
-        function toggleAlertModal(){
-            const modal=document.getElementById('alert-modal');
-            const isHidden=modal.classList.contains('opacity-0');
-            if(isHidden){
-                initAudio();
-                document.getElementById('alert-modal-current').innerText=lastPriceValue?lastPriceValue.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):'--';
-                if(targetAlertPrice){
-                    document.getElementById('alert-input').value=targetAlertPrice;
-                    document.getElementById('btn-clear-alert').classList.remove('hidden');
-                }else{
-                    document.getElementById('alert-input').value='';
-                    document.getElementById('btn-clear-alert').classList.add('hidden');
-                }
-                modal.classList.remove('opacity-0','pointer-events-none','scale-95');
-                modal.classList.add('opacity-100','pointer-events-auto','scale-100');
-            }else{
-                modal.classList.remove('opacity-100','pointer-events-auto','scale-100');
-                modal.classList.add('opacity-0','pointer-events-none','scale-95');
-            }
-        }
-        function saveAlert(){
-            const val=parseFloat(document.getElementById('alert-input').value);
-            if(isNaN(val)||!lastPriceValue) return;
-            initAudio();
-            targetAlertPrice=val;
-            alertCondition=targetAlertPrice>lastPriceValue?'up':'down';
-            const btn=document.getElementById('btn-alert-icon');
-            btn.classList.remove('text-slate-500','dark:text-slate-400','bg-black/5','dark:bg-white/5');
-            btn.classList.add('text-yellow-500','bg-yellow-100','dark:bg-yellow-400/20','border-yellow-500/50','shadow-[0_0_10px_rgba(234,179,8,0.3)]');
-            toggleAlertModal();
-        }
-        function clearAlert(){
-            targetAlertPrice=null; alertCondition=null;
-            const btn=document.getElementById('btn-alert-icon');
-            btn.classList.remove('text-yellow-500','bg-yellow-100','dark:bg-yellow-400/20','border-yellow-500/50','shadow-[0_0_10px_rgba(234,179,8,0.3)]');
-            btn.classList.add('text-slate-500','dark:text-slate-400','bg-black/5','dark:bg-white/5');
-            toggleAlertModal();
-        }
-        function checkAlertTrigger(currentPrice){
-            if(targetAlertPrice===null) return;
-            let triggered=false;
-            if(alertCondition==='up'&&currentPrice>=targetAlertPrice) triggered=true;
-            if(alertCondition==='down'&&currentPrice<=targetAlertPrice) triggered=true;
-            if(triggered){
-                playAlertSound();
-                document.getElementById('alert-trigger-asset').innerText=assets[currentAsset].title;
-                document.getElementById('alert-trigger-price').innerText=currentPrice.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
-                const popup=document.getElementById('alert-triggered-popup');
-                popup.classList.remove('opacity-0','pointer-events-none','scale-90');
-                popup.classList.add('opacity-100','pointer-events-auto','scale-100');
-                targetAlertPrice=null; alertCondition=null;
-                const btn=document.getElementById('btn-alert-icon');
-                btn.classList.remove('text-yellow-500','bg-yellow-100','dark:bg-yellow-400/20','border-yellow-500/50','shadow-[0_0_10px_rgba(234,179,8,0.3)]');
-                btn.classList.add('text-slate-500','dark:text-slate-400','bg-black/5','dark:bg-white/5');
-            }
-        }
-        function closeTriggeredAlert(){
-            const popup=document.getElementById('alert-triggered-popup');
-            popup.classList.remove('opacity-100','pointer-events-auto','scale-100');
-            popup.classList.add('opacity-0','pointer-events-none','scale-90');
-        }
-
-        // ==========================================
-        // MARKET STATUS
-        // ==========================================
-        const marketClosedOverlay=document.getElementById('market-closed-overlay');
-        const marketOpenTimeText=document.getElementById('market-open-time');
-        let marketCheckInterval=null;
-
-        function checkMarketStatus(){
-            if(currentAsset!=='XAU'){
-                marketClosedOverlay.classList.remove('opacity-100','pointer-events-auto');
-                marketClosedOverlay.classList.add('opacity-0','pointer-events-none');
-                if(navigator.onLine){
-                    document.getElementById('conn-text').innerText='Live Socket Aktif';
-                    document.getElementById('conn-dot').style.background='#10b981';
-                }
+        } else if (currentPanelTab === 'Favorit') {
+            if (pinned.length === 0 && notPinned.length === 0) {
+                container.innerHTML = `
+                    <div class="flex flex-col items-center justify-center py-10 gap-2">
+                        <div class="text-3xl opacity-30">⭐</div>
+                        <p class="text-slate-400 dark:text-slate-600 text-xs text-center">Belum ada favorit<br><span class="text-[10px] opacity-60">Klik ⭐ pada aset untuk menyimpan</span></p>
+                    </div>`;
                 return;
             }
-            const now=new Date();
-            const utcDay=now.getUTCDay();
-            const utcHour=now.getUTCHours();
-            let isClosed=false, openTimeStr="";
-            if((utcDay===5&&utcHour>=22)||(utcDay===6)||(utcDay===0&&utcHour<23)){
-                isClosed=true; openTimeStr="Senin, Pukul 06:00 WIB";
-            } else if(utcDay>=1&&utcDay<=4&&utcHour===22){
-                isClosed=true; openTimeStr="Hari ini, Pukul 06:00 WIB";
+        }
+
+        const remaining = (search || currentPanelTab === 'Favorit') ? list : notPinned;
+        html += remaining.map(a => renderAssetRow(a)).join('');
+
+        container.innerHTML = html;
+
+        const countEl = document.getElementById('panel-fav-count');
+        if (countEl) {
+            countEl.textContent = panelFavorites.length;
+            countEl.classList.toggle('hidden', panelFavorites.length === 0);
+        }
+    }
+
+    function renderAssetRow(asset) {
+        const isFav = panelFavorites.includes(asset.id);
+        const isActiveChart = asset.tv === currentChartTVSymbol;
+
+        const catColor = {
+            'Kripto': 'text-yellow-700 dark:text-yellow-400',
+            'Saham':  'text-blue-700 dark:text-blue-400',
+            'Forex':  'text-emerald-700 dark:text-emerald-400',
+            'Indeks': 'text-purple-700 dark:text-purple-400',
+        };
+        const catBg = {
+            'Kripto': 'bg-yellow-50 dark:bg-yellow-400/10',
+            'Saham':  'bg-blue-50 dark:bg-blue-400/10',
+            'Forex':  'bg-emerald-50 dark:bg-emerald-400/10',
+            'Indeks': 'bg-purple-50 dark:bg-purple-400/10',
+        };
+        const activeBorder = isActiveChart
+            ? 'border border-yellow-400/50 bg-yellow-50/50 dark:bg-yellow-400/5'
+            : 'border border-transparent hover:border-black/5 dark:hover:border-white/5 hover:bg-black/[0.04] dark:hover:bg-white/[0.04]';
+
+        const starSvg = isFav
+            ? `<svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-yellow-500 drop-shadow-[0_0_3px_rgba(234,179,8,0.5)]" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>`
+            : `<svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-slate-300 dark:text-slate-600 hover:text-yellow-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>`;
+
+        let logoHtml = '';
+        if (asset.logo2) {
+            logoHtml = `
+                <div class="relative w-7 h-5 flex-shrink-0">
+                    <img src="${asset.logo}" class="w-4 h-4 rounded-full absolute left-0 top-0 object-cover border border-white dark:border-[#1e222d] shadow-sm"
+                         onerror="this.style.display='none'" loading="lazy" decoding="async">
+                    <img src="${asset.logo2}" class="w-4 h-4 rounded-full absolute left-2.5 top-0 object-cover border border-white dark:border-[#1e222d] shadow-sm"
+                         onerror="this.style.display='none'" loading="lazy" decoding="async">
+                </div>`;
+        } else {
+            logoHtml = `
+                <div class="w-6 h-6 rounded-full ${catBg[asset.category] || 'bg-gray-100 dark:bg-white/5'} flex items-center justify-center flex-shrink-0 overflow-hidden shadow-sm border border-black/5 dark:border-white/5">
+                    <img src="${asset.logo}" class="w-5 h-5 object-contain"
+                         onerror="this.outerHTML='<span class=\\'text-[9px] font-black text-slate-500\\'>${asset.symbol.substring(0,3)}</span>'"
+                         loading="lazy" decoding="async">
+                </div>`;
+        }
+
+        return `
+        <div class="flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-pointer transition-all ${activeBorder} group asset-row-enter"
+             onclick="loadPanelAsset('${asset.id}')">
+            ${logoHtml}
+            <div class="flex-1 min-w-0">
+                <div class="text-[11px] font-extrabold truncate ${catColor[asset.category] || 'text-slate-800 dark:text-white'} ${isActiveChart ? 'text-yellow-600 dark:text-yellow-400' : ''}">
+                    ${asset.symbol}${isActiveChart ? ' <span class="text-[8px] bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 px-1 rounded font-black">AKTIF</span>' : ''}
+                </div>
+                <div class="text-[9px] text-slate-400 dark:text-slate-600 truncate font-medium">${asset.name}</div>
+            </div>
+            <button class="p-1 rounded-md transition-all flex-shrink-0 ${isFav ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} hover:bg-yellow-100 dark:hover:bg-yellow-400/10 hover:scale-110 active:scale-95"
+                    onclick="event.stopPropagation(); togglePanelFav('${asset.id}')"
+                    title="${isFav ? 'Hapus dari favorit' : 'Tambah ke favorit & pin'}">
+                ${starSvg}
+            </button>
+        </div>`;
+    }
+
+    function togglePanelFav(assetId) {
+        const idx = panelFavorites.indexOf(assetId);
+        if (idx === -1) panelFavorites.push(assetId);
+        else panelFavorites.splice(idx, 1);
+        localStorage.setItem('affannhs_panel_favs', JSON.stringify(panelFavorites));
+        renderPanel();
+    }
+
+    function loadPanelAsset(assetId) {
+        const asset = assetLibrary.find(a => a.id === assetId);
+        if (!asset) return;
+
+        if (assetId === 'XAU') { switchAsset('XAU'); return; }
+        if (assetId === 'BTC') { switchAsset('BTC'); return; }
+
+        currentChartTVSymbol = asset.tv;
+        document.getElementById('tradingview_chart').innerHTML = '';
+        buildTradingViewWidget(asset.tv);
+        renderPanel();
+    }
+
+    /* ========================================================
+       TEMA (LIGHT / DARK)
+       ======================================================== */
+    function toggleTheme() {
+        isLightMode = !isLightMode;
+        document.documentElement.classList.toggle('dark', !isLightMode);
+        document.getElementById('tradingview_chart').innerHTML = '';
+        waitForTV(function(){ buildTradingViewWidget(currentChartTVSymbol); });
+    }
+
+    /* ========================================================
+       BINTANG FAVORIT HEADER (XAU/BTC)
+       ======================================================== */
+    function toggleFavorite() {
+        favorites[currentAsset] = !favorites[currentAsset];
+        localStorage.setItem('affannhs_favorites', JSON.stringify(favorites));
+        renderFavoriteStar();
+    }
+    function renderFavoriteStar() {
+        const btn = document.getElementById('btn-favorite');
+        if (!btn) return;
+        const isFav = favorites[currentAsset];
+        if (isFav) {
+            btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 md:h-5 md:w-5 text-yellow-500 drop-shadow-[0_0_5px_rgba(234,179,8,0.6)]" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>`;
+        } else {
+            btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 md:h-5 md:w-5 text-slate-400 hover:text-yellow-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>`;
+        }
+    }
+
+    /* ========================================================
+       AUDIO ALARM
+       ======================================================== */
+    function initAudio() {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
+    function playAlertSound() {
+        try {
+            if (!audioCtx) initAudio();
+            for (let i = 0; i < 3; i++) {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.type = 'square'; osc.frequency.setValueAtTime(880, audioCtx.currentTime + (i * 0.3));
+                gain.gain.setValueAtTime(0, audioCtx.currentTime + (i * 0.3));
+                gain.gain.linearRampToValueAtTime(0.5, audioCtx.currentTime + (i * 0.3) + 0.05);
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + (i * 0.3) + 0.2);
+                osc.start(audioCtx.currentTime + (i * 0.3));
+                osc.stop(audioCtx.currentTime + (i * 0.3) + 0.2);
             }
-            if(isClosed){
-                marketOpenTimeText.innerText=openTimeStr;
-                marketClosedOverlay.classList.remove('opacity-0','pointer-events-none');
-                marketClosedOverlay.classList.add('opacity-100','pointer-events-auto');
-                document.getElementById('conn-text').innerText='Pasar Tutup';
-                const dot=document.getElementById('conn-dot');
-                dot.className="relative inline-flex rounded-full h-1.5 w-1.5 md:h-1.5 md:w-1.5 min-[2000px]:h-4 min-[2000px]:w-4 bg-orange-500 shadow-[0_0_8px_#f97316]";
+        } catch(e) {}
+    }
+
+    /* ========================================================
+       PRICE ALERT
+       ======================================================== */
+    function toggleAlertModal() {
+        const modal = document.getElementById('alert-modal');
+        const isHidden = modal.classList.contains('opacity-0');
+        if (isHidden) {
+            initAudio();
+            document.getElementById('alert-modal-current').innerText = lastPriceValue
+                ? lastPriceValue.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}) : '--';
+            if (targetAlertPrice) {
+                document.getElementById('alert-input').value = targetAlertPrice;
+                document.getElementById('btn-clear-alert').classList.remove('hidden');
             } else {
-                marketClosedOverlay.classList.remove('opacity-100','pointer-events-auto');
-                marketClosedOverlay.classList.add('opacity-0','pointer-events-none');
-                if(navigator.onLine&&document.getElementById('conn-text').innerText==='Pasar Tutup'){
-                    document.getElementById('conn-text').innerText='Live Socket Aktif';
-                    const dot=document.getElementById('conn-dot');
-                    dot.className="relative inline-flex rounded-full h-1.5 w-1.5 md:h-1.5 md:w-1.5 min-[2000px]:h-4 min-[2000px]:w-4 bg-emerald-500 shadow-[0_0_8px_#10b981]";
-                }
+                document.getElementById('alert-input').value = '';
+                document.getElementById('btn-clear-alert').classList.add('hidden');
+            }
+            modal.classList.remove('opacity-0','pointer-events-none','scale-95');
+            modal.classList.add('opacity-100','pointer-events-auto','scale-100');
+        } else {
+            modal.classList.remove('opacity-100','pointer-events-auto','scale-100');
+            modal.classList.add('opacity-0','pointer-events-none','scale-95');
+        }
+    }
+    function saveAlert() {
+        const val = parseFloat(document.getElementById('alert-input').value);
+        if (isNaN(val) || !lastPriceValue) return;
+        initAudio();
+        targetAlertPrice = val;
+        alertCondition = targetAlertPrice > lastPriceValue ? 'up' : 'down';
+        const btn = document.getElementById('btn-alert-icon');
+        btn.classList.remove('text-slate-500','dark:text-slate-400','bg-black/5','dark:bg-white/5');
+        btn.classList.add('text-yellow-500','bg-yellow-100','dark:bg-yellow-400/20','border-yellow-500/50','shadow-[0_0_10px_rgba(234,179,8,0.3)]');
+        toggleAlertModal();
+    }
+    function clearAlert() {
+        targetAlertPrice = null; alertCondition = null;
+        const btn = document.getElementById('btn-alert-icon');
+        btn.classList.remove('text-yellow-500','bg-yellow-100','dark:bg-yellow-400/20','border-yellow-500/50','shadow-[0_0_10px_rgba(234,179,8,0.3)]');
+        btn.classList.add('text-slate-500','dark:text-slate-400','bg-black/5','dark:bg-white/5');
+        toggleAlertModal();
+    }
+    function checkAlertTrigger(currentPrice) {
+        if (targetAlertPrice === null) return;
+        let triggered = false;
+        if (alertCondition === 'up' && currentPrice >= targetAlertPrice) triggered = true;
+        if (alertCondition === 'down' && currentPrice <= targetAlertPrice) triggered = true;
+        if (triggered) {
+            playAlertSound();
+            document.getElementById('alert-trigger-asset').innerText = assets[currentAsset]?.title || currentAsset;
+            document.getElementById('alert-trigger-price').innerText = currentPrice.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+            const popup = document.getElementById('alert-triggered-popup');
+            popup.classList.remove('opacity-0','pointer-events-none','scale-90');
+            popup.classList.add('opacity-100','pointer-events-auto','scale-100');
+            targetAlertPrice = null; alertCondition = null;
+            const btn = document.getElementById('btn-alert-icon');
+            btn.classList.remove('text-yellow-500','bg-yellow-100','dark:bg-yellow-400/20','border-yellow-500/50','shadow-[0_0_10px_rgba(234,179,8,0.3)]');
+            btn.classList.add('text-slate-500','dark:text-slate-400','bg-black/5','dark:bg-white/5');
+        }
+    }
+    function closeTriggeredAlert() {
+        const popup = document.getElementById('alert-triggered-popup');
+        popup.classList.remove('opacity-100','pointer-events-auto','scale-100');
+        popup.classList.add('opacity-0','pointer-events-none','scale-90');
+    }
+
+    /* ========================================================
+       STATS MODAL
+       ======================================================== */
+    function toggleStatsModal() {
+        const modal = document.getElementById('stats-modal');
+        const isHidden = modal.classList.contains('opacity-0');
+        if (isHidden) {
+            modal.classList.remove('opacity-0','pointer-events-none','scale-95');
+            modal.classList.add('opacity-100','pointer-events-auto','scale-100');
+        } else {
+            modal.classList.remove('opacity-100','pointer-events-auto','scale-100');
+            modal.classList.add('opacity-0','pointer-events-none','scale-95');
+        }
+    }
+
+    /* ========================================================
+       MARKET STATUS
+       ======================================================== */
+    const marketClosedOverlay = document.getElementById('market-closed-overlay');
+    const marketOpenTimeText = document.getElementById('market-open-time');
+    let marketCheckInterval = null;
+
+    function checkMarketStatus() {
+        if (currentAsset !== 'XAU') {
+            marketClosedOverlay.classList.remove('opacity-100','pointer-events-auto');
+            marketClosedOverlay.classList.add('opacity-0','pointer-events-none');
+            if (navigator.onLine) {
+                document.getElementById('conn-text').innerText = 'Live Socket Aktif';
+                document.getElementById('conn-dot').style.background = '#10b981';
+            }
+            return;
+        }
+        const now = new Date();
+        const utcDay = now.getUTCDay(), utcHour = now.getUTCHours();
+        let isClosed = false, openTimeStr = '';
+        if ((utcDay===5&&utcHour>=22)||(utcDay===6)||(utcDay===0&&utcHour<23)) { isClosed=true; openTimeStr='Senin, Pukul 06:00 WIB'; }
+        else if (utcDay>=1&&utcDay<=4&&utcHour===22) { isClosed=true; openTimeStr='Hari ini, Pukul 06:00 WIB'; }
+
+        if (isClosed) {
+            marketOpenTimeText.innerText = openTimeStr;
+            marketClosedOverlay.classList.remove('opacity-0','pointer-events-none');
+            marketClosedOverlay.classList.add('opacity-100','pointer-events-auto');
+            document.getElementById('conn-text').innerText = 'Pasar Tutup';
+            setConnDot('orange');
+        } else {
+            marketClosedOverlay.classList.remove('opacity-100','pointer-events-auto');
+            marketClosedOverlay.classList.add('opacity-0','pointer-events-none');
+            if (navigator.onLine && document.getElementById('conn-text').innerText === 'Pasar Tutup') {
+                document.getElementById('conn-text').innerText = 'Live Socket Aktif';
+                setConnDot('green');
             }
         }
+    }
 
-        // ==========================================
-        // FULLSCREEN — Android + iOS FIX
-        // ==========================================
-        let isIOSFullscreen = false;
-
-        function isIOS(){
-            return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-        }
-
-        function toggleFullScreen(){
-            if(isIOS()){
-                // iOS: Pseudo-fullscreen dengan sembunyikan header/footer
-                isIOSFullscreen = !isIOSFullscreen;
-                if(isIOSFullscreen){
+    /* ========================================================
+       FULLSCREEN
+       ======================================================== */
+    let isIOSFullscreen = false;
+    function isIOS() { return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream; }
+    function toggleFullScreen() {
+        if (isIOS()) {
+            isIOSFullscreen = !isIOSFullscreen;
+            document.body.classList.toggle('ios-fullscreen', isIOSFullscreen);
+            document.getElementById('fs-icon-enter').classList.toggle('hidden', isIOSFullscreen);
+            document.getElementById('fs-icon-exit').classList.toggle('hidden', !isIOSFullscreen);
+            if (isIOSFullscreen) window.scrollTo(0, 1);
+        } else {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(() => {
+                    isIOSFullscreen = true;
                     document.body.classList.add('ios-fullscreen');
                     document.getElementById('fs-icon-enter').classList.add('hidden');
                     document.getElementById('fs-icon-exit').classList.remove('hidden');
-                    window.scrollTo(0, 1);
-                } else {
-                    document.body.classList.remove('ios-fullscreen');
-                    document.getElementById('fs-icon-enter').classList.remove('hidden');
-                    document.getElementById('fs-icon-exit').classList.add('hidden');
-                }
-            } else {
-                // Android / Desktop: Fullscreen API standar
-                if(!document.fullscreenElement){
-                    document.documentElement.requestFullscreen().catch(err=>{
-                        document.body.classList.add('ios-fullscreen');
-                        isIOSFullscreen = true;
-                        document.getElementById('fs-icon-enter').classList.add('hidden');
-                        document.getElementById('fs-icon-exit').classList.remove('hidden');
-                    });
-                } else {
-                    document.exitFullscreen();
-                }
-            }
+                });
+            } else { document.exitFullscreen(); }
         }
-
-        document.addEventListener('fullscreenchange', ()=>{
-            const iconEnter=document.getElementById('fs-icon-enter');
-            const iconExit=document.getElementById('fs-icon-exit');
-            if(document.fullscreenElement){
-                iconEnter.classList.add('hidden');
-                iconExit.classList.remove('hidden');
-            } else {
-                iconEnter.classList.remove('hidden');
-                iconExit.classList.add('hidden');
-                document.body.classList.remove('ios-fullscreen');
-                isIOSFullscreen = false;
-            }
-        });
-
-        // ==========================================
-        // RECONNECT & KONEKSI
-        // ==========================================
-        const offlinePopup=document.getElementById('offline-popup');
-        const reconnectOverlay=document.getElementById('reconnect-overlay');
-        const connDotPing=document.getElementById('conn-dot-ping');
-        const connDot=document.getElementById('conn-dot');
-        const connText=document.getElementById('conn-text');
-        let isReconnecting=false;
-
-        function setConnDot(color){
-            const colors={
-                green:  "relative inline-flex rounded-full h-1.5 w-1.5 md:h-1.5 md:w-1.5 min-[2000px]:h-4 min-[2000px]:w-4 bg-emerald-500 shadow-[0_0_8px_#10b981]",
-                yellow: "relative inline-flex rounded-full h-1.5 w-1.5 md:h-1.5 md:w-1.5 min-[2000px]:h-4 min-[2000px]:w-4 bg-yellow-500 shadow-[0_0_8px_#eab308]",
-                red:    "relative inline-flex rounded-full h-1.5 w-1.5 md:h-1.5 md:w-1.5 min-[2000px]:h-4 min-[2000px]:w-4 bg-red-500 shadow-[0_0_8px_#ef4444]",
-                orange: "relative inline-flex rounded-full h-1.5 w-1.5 md:h-1.5 md:w-1.5 min-[2000px]:h-4 min-[2000px]:w-4 bg-orange-500 shadow-[0_0_8px_#f97316]",
-            };
-            connDot.className = colors[color] || colors.green;
+    }
+    document.addEventListener('fullscreenchange', () => {
+        const enter = document.getElementById('fs-icon-enter');
+        const exit  = document.getElementById('fs-icon-exit');
+        if (document.fullscreenElement) {
+            enter.classList.add('hidden'); exit.classList.remove('hidden');
+        } else {
+            enter.classList.remove('hidden'); exit.classList.add('hidden');
+            document.body.classList.remove('ios-fullscreen'); isIOSFullscreen = false;
         }
+    });
 
-        function handleAutoReconnect(){
-            if(isReconnecting) return;
-            isReconnecting=true;
-            connText.innerText='Memulihkan Data...';
-            setConnDot('yellow');
-            reconnectOverlay.classList.remove('opacity-0','pointer-events-none');
-            reconnectOverlay.classList.add('opacity-100');
-            setTimeout(()=>{
-                switchAsset(currentAsset);
-                setConnDot('green');
-                connText.innerText='Live Socket Aktif';
-                reconnectOverlay.classList.remove('opacity-100');
-                reconnectOverlay.classList.add('opacity-0','pointer-events-none');
-                checkMarketStatus();
-                isReconnecting=false;
-            },1500);
-        }
+    /* ========================================================
+       RECONNECT & KONEKSI
+       ======================================================== */
+    const offlinePopup = document.getElementById('offline-popup');
+    const reconnectOverlay = document.getElementById('reconnect-overlay');
+    const connDotPing = document.getElementById('conn-dot-ping');
+    const connDot = document.getElementById('conn-dot');
+    const connText = document.getElementById('conn-text');
+    let isReconnecting = false;
 
-        function updateConnectionStatus(){
-            if(navigator.onLine){
-                offlinePopup.classList.add('opacity-0','pointer-events-none','-translate-y-8');
-                offlinePopup.classList.remove('opacity-100','translate-y-0');
-                connDotPing.classList.remove('hidden');
-                handleAutoReconnect();
-            } else {
-                offlinePopup.classList.remove('opacity-0','pointer-events-none','-translate-y-8');
-                offlinePopup.classList.add('opacity-100','translate-y-0');
-                connDotPing.classList.add('hidden');
-                setConnDot('red');
-                connText.innerText='Koneksi Terputus';
-            }
-        }
-        window.addEventListener('online',  updateConnectionStatus);
-        window.addEventListener('offline', updateConnectionStatus);
-
-        // ==========================================
-        // ANIMASI MINI BARS & PANAH (MIRROR CANDLESTICK)
-        // ==========================================
-        let priceHistory = [0,0,0,0,0];
-        let barColors = ['#9ca3af','#9ca3af','#9ca3af','#9ca3af','#9ca3af']; // abu-abu tailwind
-
-        function updateMiniCandlestick(currentPrice, prevPrice){
-            if(prevPrice === 0) return;
-
-            const isUp = currentPrice >= prevPrice;
-            const color = isUp ? '#10b981' : '#ef4444';
-
-            priceHistory.shift(); priceHistory.push(currentPrice);
-            barColors.shift(); barColors.push(color);
-
-            const minPrice = Math.min(...priceHistory.filter(p=>p>0));
-            const maxPrice = Math.max(...priceHistory.filter(p=>p>0));
-            const range = maxPrice - minPrice || 1;
-
-            for(let i=1;i<=5;i++){
-                const bar = document.getElementById('mini-bar-'+i);
-                if(!bar || priceHistory[i-1]===0) continue;
-                const heightPct = ((priceHistory[i-1]-minPrice)/range)*12+4;
-                bar.style.height = Math.round(heightPct)+'px';
-                bar.style.background = barColors[i-1];
-                bar.style.boxShadow = barColors[i-1]==='#10b981'
-                    ? '0 0 4px rgba(16,185,129,0.4)'
-                    : '0 0 4px rgba(239,68,68,0.4)';
-            }
-
-            const arrowEl = document.getElementById('price-arrow');
-            arrowEl.classList.remove('arrow-up','arrow-down');
-            void arrowEl.offsetWidth; 
-            if(isUp){
-                arrowEl.innerHTML = '▲';
-                arrowEl.style.color = '#10b981';
-                arrowEl.style.textShadow = '0 0 8px rgba(16,185,129,0.5)';
-                arrowEl.classList.add('arrow-up');
-            } else {
-                arrowEl.innerHTML = '▼';
-                arrowEl.style.color = '#ef4444';
-                arrowEl.style.textShadow = '0 0 8px rgba(239,68,68,0.5)';
-                arrowEl.classList.add('arrow-down');
-            }
-        }
-
-        // ==========================================
-        // REAL-TIME DATA & TICKER UI
-        // ==========================================
-        let currentAsset='XAU';
-        let pollingInterval=null, liveSocket=null, isIntentionalClose=false, lastPriceValue=0;
-
-        function formatVolume(vol){
-            if(vol>=1000000) return (vol/1000000).toFixed(2)+'M';
-            if(vol>=1000)    return (vol/1000).toFixed(2)+'K';
-            return vol.toFixed(2);
-        }
-        function updateStatsUI(high,low,vol){
-            document.getElementById('stat-high').innerText=high.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
-            document.getElementById('stat-low').innerText=low.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
-            document.getElementById('stat-vol').innerText=formatVolume(vol);
-        }
-
-        async function fetchInstantData(assetKey){
-            if(!navigator.onLine) return;
-            const t=new Date().getTime();
-            const sym=assetKey==='XAU'?'PAXGUSDT':'BTCUSDT';
-            try{
-                const res=await fetch(`https://data-api.binance.vision/api/v3/ticker/24hr?symbol=${sym}&_t=${t}`);
-                const d=await res.json();
-                updateTickerUI(parseFloat(d.lastPrice),parseFloat(d.priceChange),parseFloat(d.priceChangePercent));
-                updateStatsUI(parseFloat(d.highPrice),parseFloat(d.lowPrice),parseFloat(d.volume));
-            }catch(e){
-                const pair=assetKey==='XAU'?'PAXGUSD':'XBTUSD';
-                try{
-                    const kr=await fetch(`https://api.kraken.com/0/public/Ticker?pair=${pair}&_t=${t}`);
-                    const kd=await kr.json();
-                    const key=Object.keys(kd.result)[0];
-                    const tk=kd.result[key];
-                    updateTickerUI(parseFloat(tk.c[0]),parseFloat(tk.c[0])-parseFloat(tk.o),((parseFloat(tk.c[0])-parseFloat(tk.o))/parseFloat(tk.o))*100);
-                    updateStatsUI(parseFloat(tk.h[0]),parseFloat(tk.l[0]),parseFloat(tk.v[0]));
-                }catch(fe){console.error("Gagal memuat data");}
-            }
-        }
-
-        function initSuperRealtimeData(assetKey){
-            isIntentionalClose=true;
-            if(liveSocket) liveSocket.close();
-            if(pollingInterval) clearInterval(pollingInterval);
-            lastPriceValue=0; 
-            priceHistory=[0,0,0,0,0]; 
-            barColors=['#9ca3af','#9ca3af','#9ca3af','#9ca3af','#9ca3af'];
-
-            fetchInstantData(assetKey);
-
-            const streamName=assetKey==='XAU'?'paxgusdt@ticker':'btcusdt@ticker';
-            isIntentionalClose=false;
-            liveSocket=new WebSocket(`wss://stream.binance.com:9443/ws/${streamName}`);
-
-            liveSocket.onmessage=function(event){
-                const d=JSON.parse(event.data);
-                updateTickerUI(parseFloat(d.c),parseFloat(d.p),parseFloat(d.P));
-                updateStatsUI(parseFloat(d.h),parseFloat(d.l),parseFloat(d.v));
-            };
-            liveSocket.onclose=function(){
-                if(!isIntentionalClose&&navigator.onLine){
-                    if(document.getElementById('conn-text').innerText!=='Pasar Tutup'){
-                        document.getElementById('conn-text').innerText='Mode Fast Polling';
-                    }
-                    pollingInterval=setInterval(()=>{ fetchInstantData(currentAsset); },1000);
-                }
-            };
-        }
-
-        function updateTickerUI(currentPrice, priceChange, percentChange){
-            const priceEl=document.getElementById('custom-ticker-price');
-            const changeEl=document.getElementById('custom-ticker-change');
-
-            const formatted=currentPrice.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
-
-            const tickUp = lastPriceValue === 0
-                ? (priceChange >= 0)           
-                : (currentPrice >= lastPriceValue); 
-
-            const sign24h = priceChange >= 0 ? '+' : '';
-
-            if(lastPriceValue!==0 && currentPrice!==lastPriceValue){
-                updateMiniCandlestick(currentPrice, lastPriceValue);
-            }
-
-            if(lastPriceValue!==0 && currentPrice!==lastPriceValue){
-                priceEl.classList.remove('flash-up','flash-down');
-                void priceEl.offsetWidth;
-                priceEl.classList.add(currentPrice > lastPriceValue ? 'flash-up' : 'flash-down');
-            }
-
-            priceEl.innerText=formatted;
-            changeEl.innerText=`${sign24h}${priceChange.toFixed(2)} (${sign24h}${percentChange.toFixed(2)}%)`;
-
-            lastPriceValue=currentPrice;
-            checkAlertTrigger(currentPrice);
-
-            const baseClass="px-2 py-0.5 md:px-2 md:py-0.5 min-[2000px]:px-5 min-[2000px]:py-2 rounded-md min-[2000px]:rounded-xl min-w-[85px] md:min-w-[90px] min-[2000px]:min-w-[160px] text-center shadow-sm text-sm md:text-sm min-[2000px]:text-2xl transition-all duration-300 font-mono font-bold";
-
-            if(tickUp){
-                priceEl.className=`${baseClass} bg-green-100 dark:bg-[rgba(16,185,129,0.15)] text-emerald-600 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-900/50`;
-                changeEl.className="text-emerald-600 dark:text-emerald-500 font-bold text-xs md:text-xs min-[2000px]:text-xl whitespace-nowrap drop-shadow-[0_0_2px_rgba(16,185,129,0.1)] dark:drop-shadow-[0_0_5px_rgba(16,185,129,0.3)] transition-colors";
-            } else {
-                priceEl.className=`${baseClass} bg-red-100 dark:bg-[rgba(239,68,68,0.15)] text-red-600 dark:text-red-400 border border-red-300 dark:border-red-900/50`;
-                changeEl.className="text-red-600 dark:text-red-500 font-bold text-xs md:text-xs min-[2000px]:text-xl whitespace-nowrap drop-shadow-[0_0_2px_rgba(239,68,68,0.1)] dark:drop-shadow-[0_0_5px_rgba(239,68,68,0.3)] transition-colors";
-            }
-        }
-
-        // ==========================================
-        // SWITCHER ASSET & TRADINGVIEW CHART (DENGAN DRAWING TOOLS)
-        // ==========================================
-        const assets={
-            XAU: { symbolTV:"OANDA:XAUUSD", title:"XAU/USD" },
-            BTC: { symbolTV:"BINANCE:BTCUSDT", title:"BTC/USD" }
+    function setConnDot(color) {
+        const colors = {
+            green:  'relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500 shadow-[0_0_8px_#10b981]',
+            yellow: 'relative inline-flex rounded-full h-1.5 w-1.5 bg-yellow-500 shadow-[0_0_8px_#eab308]',
+            red:    'relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500 shadow-[0_0_8px_#ef4444]',
+            orange: 'relative inline-flex rounded-full h-1.5 w-1.5 bg-orange-500 shadow-[0_0_8px_#f97316]',
         };
+        connDot.className = colors[color] || colors.green;
+    }
+    function handleAutoReconnect() {
+        if (isReconnecting) return;
+        isReconnecting = true;
+        connText.innerText = 'Memulihkan Data...'; setConnDot('yellow');
+        reconnectOverlay.classList.remove('opacity-0','pointer-events-none');
+        reconnectOverlay.classList.add('opacity-100');
+        setTimeout(() => {
+            switchAsset(currentAsset);
+            setConnDot('green'); connText.innerText = 'Live Socket Aktif';
+            reconnectOverlay.classList.remove('opacity-100');
+            reconnectOverlay.classList.add('opacity-0','pointer-events-none');
+            checkMarketStatus(); isReconnecting = false;
+        }, 1500);
+    }
+    function updateConnectionStatus() {
+        if (navigator.onLine) {
+            offlinePopup.classList.add('opacity-0','pointer-events-none','-translate-y-8');
+            offlinePopup.classList.remove('opacity-100','translate-y-0');
+            connDotPing.classList.remove('hidden');
+            handleAutoReconnect();
+        } else {
+            offlinePopup.classList.remove('opacity-0','pointer-events-none','-translate-y-8');
+            offlinePopup.classList.add('opacity-100','translate-y-0');
+            connDotPing.classList.add('hidden');
+            setConnDot('red'); connText.innerText = 'Koneksi Terputus';
+        }
+    }
+    window.addEventListener('online',  updateConnectionStatus);
+    window.addEventListener('offline', updateConnectionStatus);
 
-        function switchAsset(assetKey){
-            currentAsset=assetKey;
-            const asset=assets[assetKey];
+    /* ========================================================
+       MINI CANDLESTICK BARS
+       ======================================================== */
+    function updateMiniCandlestick(currentPrice, prevPrice) {
+        if (prevPrice === 0) return;
+        const isUp = currentPrice >= prevPrice;
+        const color = isUp ? '#10b981' : '#ef4444';
+        priceHistory.shift(); priceHistory.push(currentPrice);
+        barColors.shift(); barColors.push(color);
+        const minP = Math.min(...priceHistory.filter(p=>p>0));
+        const maxP = Math.max(...priceHistory.filter(p=>p>0));
+        const range = maxP - minP || 1;
+        for (let i = 1; i <= 5; i++) {
+            const bar = document.getElementById('mini-bar-' + i);
+            if (!bar || priceHistory[i-1] === 0) continue;
+            const h = ((priceHistory[i-1]-minP)/range)*12+4;
+            bar.style.height = Math.round(h)+'px';
+            bar.style.background = barColors[i-1];
+            bar.style.boxShadow = barColors[i-1]==='#10b981'
+                ? '0 0 4px rgba(16,185,129,0.4)' : '0 0 4px rgba(239,68,68,0.4)';
+        }
+        const arrowEl = document.getElementById('price-arrow');
+        arrowEl.classList.remove('arrow-up','arrow-down');
+        void arrowEl.offsetWidth;
+        if (isUp) {
+            arrowEl.innerHTML = '▲'; arrowEl.style.color = '#10b981';
+            arrowEl.style.textShadow = '0 0 8px rgba(16,185,129,0.5)';
+            arrowEl.classList.add('arrow-up');
+        } else {
+            arrowEl.innerHTML = '▼'; arrowEl.style.color = '#ef4444';
+            arrowEl.style.textShadow = '0 0 8px rgba(239,68,68,0.5)';
+            arrowEl.classList.add('arrow-down');
+        }
+    }
 
-            const activeXAU="px-3 py-0.5 md:px-3 md:py-1 min-[2000px]:px-8 min-[2000px]:py-3 rounded-md min-[2000px]:rounded-lg bg-gradient-to-r from-yellow-500 to-yellow-400 dark:from-yellow-600 dark:to-yellow-500 text-slate-900 dark:text-white text-[10px] md:text-[11px] min-[2000px]:text-xl font-bold transition-all duration-300 shadow-md transform hover:scale-105 active:scale-95 whitespace-nowrap cursor-pointer";
-            const activeBTC="px-3 py-0.5 md:px-3 md:py-1 min-[2000px]:px-8 min-[2000px]:py-3 rounded-md min-[2000px]:rounded-lg bg-gradient-to-r from-orange-500 to-orange-400 dark:from-orange-600 dark:to-orange-500 text-slate-900 dark:text-white text-[10px] md:text-[11px] min-[2000px]:text-xl font-bold transition-all duration-300 shadow-md transform hover:scale-105 active:scale-95 whitespace-nowrap cursor-pointer";
-            const inactive="px-3 py-0.5 md:px-3 md:py-1 min-[2000px]:px-8 min-[2000px]:py-3 rounded-md min-[2000px]:rounded-lg text-slate-600 dark:text-[#787b86] hover:text-slate-900 dark:hover:text-white text-[10px] md:text-[11px] min-[2000px]:text-xl font-bold transition-all duration-300 transform hover:bg-black/5 dark:hover:bg-white/5 hover:scale-105 active:scale-95 whitespace-nowrap cursor-pointer";
+    /* ========================================================
+       REAL-TIME DATA
+       ======================================================== */
+    function formatVolume(vol) {
+        if (vol >= 1000000) return (vol/1000000).toFixed(2)+'M';
+        if (vol >= 1000)    return (vol/1000).toFixed(2)+'K';
+        return vol.toFixed(2);
+    }
+    function updateStatsUI(high, low, vol) {
+        const hStr = high.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+        const lStr = low.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+        document.getElementById('stat-high').innerText = hStr;
+        document.getElementById('stat-low').innerText = lStr;
+        document.getElementById('stat-vol').innerText = formatVolume(vol);
+        document.getElementById('modal-stat-high').innerText = hStr;
+        document.getElementById('modal-stat-low').innerText = lStr;
+    }
 
-            document.getElementById('btn-XAU').className=(assetKey==='XAU')?activeXAU:inactive;
-            document.getElementById('btn-BTC').className=(assetKey==='BTC')?activeBTC:inactive;
+    async function fetchInstantData(assetKey) {
+        if (!navigator.onLine) return;
+        const t = new Date().getTime();
+        const sym = assetKey === 'XAU' ? 'PAXGUSDT' : 'BTCUSDT';
+        try {
+            const res = await fetch(`https://data-api.binance.vision/api/v3/ticker/24hr?symbol=${sym}&_t=${t}`);
+            const d = await res.json();
+            updateTickerUI(parseFloat(d.lastPrice), parseFloat(d.priceChange), parseFloat(d.priceChangePercent));
+            updateStatsUI(parseFloat(d.highPrice), parseFloat(d.lowPrice), parseFloat(d.volume));
+        } catch(e) {
+            const pair = assetKey === 'XAU' ? 'PAXGUSD' : 'XBTUSD';
+            try {
+                const kr = await fetch(`https://api.kraken.com/0/public/Ticker?pair=${pair}&_t=${t}`);
+                const kd = await kr.json();
+                const key = Object.keys(kd.result)[0];
+                const tk = kd.result[key];
+                updateTickerUI(parseFloat(tk.c[0]), parseFloat(tk.c[0])-parseFloat(tk.o), ((parseFloat(tk.c[0])-parseFloat(tk.o))/parseFloat(tk.o))*100);
+                updateStatsUI(parseFloat(tk.h[0]), parseFloat(tk.l[0]), parseFloat(tk.v[0]));
+            } catch(fe) {}
+        }
+    }
 
-            // Update UI Bintang Favorit
-            renderFavoriteStar();
+    function initSuperRealtimeData(assetKey) {
+        isIntentionalClose = true;
+        if (liveSocket) liveSocket.close();
+        if (pollingInterval) clearInterval(pollingInterval);
+        lastPriceValue = 0;
+        priceHistory = [0,0,0,0,0];
+        barColors = ['#9ca3af','#9ca3af','#9ca3af','#9ca3af','#9ca3af'];
+        sessionStats = { count:0, sum:0, sHigh:-Infinity, sLow:Infinity };
 
-            document.getElementById('custom-ticker-symbol').innerText=asset.title;
-            document.getElementById('custom-ticker-price').innerHTML='<span class="animate-pulse">Memuat...</span>';
-            document.getElementById('custom-ticker-price').className="bg-gray-200 dark:bg-[#1e222d] text-slate-700 dark:text-slate-300 px-2 py-0.5 md:px-2 md:py-0.5 min-[2000px]:px-5 min-[2000px]:py-2 rounded-md min-[2000px]:rounded-xl min-w-[85px] md:min-w-[90px] min-[2000px]:min-w-[160px] text-center transition-all duration-300 border border-black/5 dark:border-white/5 text-sm md:text-sm min-[2000px]:text-2xl font-mono";
-            document.getElementById('custom-ticker-change').innerText="--";
-            document.getElementById('custom-ticker-change').className="text-slate-500 dark:text-slate-400 font-semibold text-xs md:text-xs min-[2000px]:text-xl whitespace-nowrap";
-
-            const arrowEl=document.getElementById('price-arrow');
-            arrowEl.innerHTML='—'; arrowEl.style.color=isLightMode?'#9ca3af':'#555'; arrowEl.style.textShadow='none';
-            for(let i=1;i<=5;i++){
-                const b=document.getElementById('mini-bar-'+i);
-                if(b){b.style.height='6px';b.style.background=isLightMode?'#d1d5db':'#555';b.style.boxShadow='none';}
+        fetchInstantData(assetKey);
+        const streamName = assetKey === 'XAU' ? 'paxgusdt@ticker' : 'btcusdt@ticker';
+        isIntentionalClose = false;
+        liveSocket = new WebSocket(`wss://stream.binance.com:9443/ws/${streamName}`);
+        liveSocket.onmessage = function(event) {
+            const d = JSON.parse(event.data);
+            updateTickerUI(parseFloat(d.c), parseFloat(d.p), parseFloat(d.P));
+            updateStatsUI(parseFloat(d.h), parseFloat(d.l), parseFloat(d.v));
+        };
+        liveSocket.onclose = function() {
+            if (!isIntentionalClose && navigator.onLine) {
+                if (document.getElementById('conn-text').innerText !== 'Pasar Tutup')
+                    document.getElementById('conn-text').innerText = 'Mode Fast Polling';
+                pollingInterval = setInterval(() => fetchInstantData(currentAsset), 1000);
             }
+        };
+    }
 
-            if(targetAlertPrice) clearAlert();
-            checkMarketStatus();
-            initSuperRealtimeData(assetKey);
+    function updateTickerUI(currentPrice, priceChange, percentChange) {
+        const priceEl  = document.getElementById('custom-ticker-price');
+        const changeEl = document.getElementById('custom-ticker-change');
+        const formatted = currentPrice.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+        const tickUp = lastPriceValue === 0 ? (priceChange >= 0) : (currentPrice >= lastPriceValue);
+        const sign24h = priceChange >= 0 ? '+' : '';
 
-            document.getElementById('tradingview_chart').innerHTML='';
-
-            // KONFIGURASI TRADINGVIEW (DIKEMBALIKAN KE 1 MENIT)
-            // Fitur drawing tools, garis, dan bintang favorit sekarang TERBUKA LEBAR
-            new TradingView.widget({
-                "autosize": true,
-                "symbol": asset.symbolTV,
-                "interval": "1", // <-- Mengembalikan ke 1 Menit agar Menu Kiri muncul
-                "timezone": "Asia/Jakarta",
-                "theme": isLightMode ? "light" : "dark",
-                "style": "1",
-                "locale": "id",
-                "enable_publishing": false,
-                "backgroundColor": isLightMode ? "#ffffff" : "#0b0e14",
-                "gridColor": isLightMode ? "#f3f4f6" : "#161a25",
-                "hide_top_toolbar": false,
-                "hide_legend": false,
-                "hide_side_toolbar": false, 
-                "save_image": false,
-                "hide_volume": true,
-                "favorites": {
-                    "intervals": ["1", "5", "15", "30", "60", "D"],
-                    "chartType": "Candles"
-                },
-                "studies": [
-                    { "id": "MAExp@tv-basicstudies", "inputs": { "length": 20 }, "override": { "Plot.color": "#f59e0b", "Plot.linewidth": 2 } },
-                    { "id": "MAExp@tv-basicstudies", "inputs": { "length": 50 }, "override": { "Plot.color": "#60a5fa", "Plot.linewidth": 2 } },
-                    { "id": "BB@tv-basicstudies", "inputs": { "length": 20, "mult": 2 }, "override": { "Upper.color": "#a78bfa", "Lower.color": "#a78bfa", "Middle.color": "#6d28d9", "Upper.linewidth": 1, "Lower.linewidth": 1, "Middle.linewidth": 1 } }
-                ],
-                // KODE INI YANG BIKIN DRAWING TOOLS BISA MUNCUL WALAU DI HP
-                "enabled_features": [
-                    "keep_left_toolbar_visible_on_small_screens",
-                    "use_localstorage_for_settings"
-                ],
-                "disabled_features": [
-                    "header_screenshot",
-                    "create_volume_indicator_by_default",
-                    "volume_force_overlay"
-                ],
-                "container_id": "tradingview_chart",
-                "toolbar_bg": isLightMode ? "#ffffff" : "#0b0e14"
-            });
+        if (lastPriceValue !== 0 && currentPrice !== lastPriceValue) {
+            updateMiniCandlestick(currentPrice, lastPriceValue);
+            priceEl.classList.remove('flash-up','flash-down');
+            void priceEl.offsetWidth;
+            priceEl.classList.add(currentPrice > lastPriceValue ? 'flash-up' : 'flash-down');
         }
 
-        window.addEventListener('DOMContentLoaded', ()=>{
-            if(navigator.onLine){
+        priceEl.innerText = formatted;
+        changeEl.innerText = `${sign24h}${priceChange.toFixed(2)} (${sign24h}${percentChange.toFixed(2)}%)`;
+        lastPriceValue = currentPrice;
+        checkAlertTrigger(currentPrice);
+
+        if (currentPrice > 0) {
+            sessionStats.count++;
+            sessionStats.sum += currentPrice;
+            sessionStats.sHigh = Math.max(sessionStats.sHigh, currentPrice);
+            sessionStats.sLow  = Math.min(sessionStats.sLow,  currentPrice);
+            if (sessionStats.count > 0) {
+                document.getElementById('modal-stat-avg').innerText = (sessionStats.sum/sessionStats.count).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+                document.getElementById('modal-stat-volat').innerText = (sessionStats.sHigh-sessionStats.sLow).toFixed(2);
+                document.getElementById('modal-stat-updates').innerText = sessionStats.count.toLocaleString();
+            }
+        }
+
+        const baseClass = "px-2 py-0.5 rounded-md min-w-[90px] text-center shadow-sm text-sm transition-all duration-300 font-mono font-bold";
+        if (tickUp) {
+            priceEl.className = `${baseClass} bg-green-100 dark:bg-[rgba(16,185,129,0.15)] text-emerald-600 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-900/50`;
+            changeEl.className = "text-emerald-600 dark:text-emerald-500 font-bold text-xs whitespace-nowrap drop-shadow-[0_0_5px_rgba(16,185,129,0.3)] transition-colors";
+        } else {
+            priceEl.className = `${baseClass} bg-red-100 dark:bg-[rgba(239,68,68,0.15)] text-red-600 dark:text-red-400 border border-red-300 dark:border-red-900/50`;
+            changeEl.className = "text-red-600 dark:text-red-500 font-bold text-xs whitespace-nowrap drop-shadow-[0_0_5px_rgba(239,68,68,0.3)] transition-colors";
+        }
+    }
+
+    /* ========================================================
+       TRADINGVIEW WIDGET BUILDER
+       ======================================================== */
+    const tvWatchlist = [
+        'OANDA:XAUUSD','BINANCE:BTCUSDT','BINANCE:ETHUSDT','BINANCE:SOLUSDT',
+        'BINANCE:BNBUSDT','BINANCE:XRPUSDT','BINANCE:DOGEUSDT',
+        'OANDA:EURUSD','OANDA:GBPUSD','OANDA:USDJPY','OANDA:USDIDR',
+        'NASDAQ:AAPL','NASDAQ:TSLA','NASDAQ:NVDA','NASDAQ:MSFT',
+        'NASDAQ:GOOGL','NASDAQ:META','NASDAQ:AMZN',
+        'SP:SPX','NASDAQ:NDX','TVC:DXY','CBOE:VIX','IDX:COMPOSITE'
+    ];
+
+    function buildTradingViewWidget(tvSymbol) {
+        if (typeof TradingView === 'undefined') {
+            waitForTV(function(){ buildTradingViewWidget(tvSymbol); });
+            return;
+        }
+        new TradingView.widget({
+            "autosize": true,
+            "symbol": tvSymbol,
+            "interval": "60",
+            "timezone": "Asia/Jakarta",
+            "theme": isLightMode ? "light" : "dark",
+            "style": "1",
+            "locale": "id",
+            "enable_publishing": false,
+            "backgroundColor": isLightMode ? "#ffffff" : "#0b0e14",
+            "gridColor": isLightMode ? "#f3f4f6" : "#161a25",
+            "hide_top_toolbar": false,
+            "hide_legend": false,
+            "hide_side_toolbar": false,
+            "save_image": false,
+            "hide_volume": true,
+            "details": true,
+            "hotlist": true,
+            "watchlist": tvWatchlist,
+            "favorites": {
+                "intervals": ["1","5","15","30","60","D"],
+                "chartType": "Candles"
+            },
+            "studies": [
+                { "id":"MAExp@tv-basicstudies","inputs":{"length":20},"override":{"Plot.color":"#f59e0b","Plot.linewidth":2} },
+                { "id":"MAExp@tv-basicstudies","inputs":{"length":50},"override":{"Plot.color":"#60a5fa","Plot.linewidth":2} },
+                { "id":"BB@tv-basicstudies","inputs":{"length":20,"mult":2},"override":{"Upper.color":"#a78bfa","Lower.color":"#a78bfa","Middle.color":"#6d28d9","Upper.linewidth":1,"Lower.linewidth":1,"Middle.linewidth":1} }
+            ],
+            "enabled_features":  ["keep_left_toolbar_visible_on_small_screens","use_localstorage_for_settings"],
+            "disabled_features": ["header_screenshot","create_volume_indicator_by_default","volume_force_overlay"],
+            "container_id": "tradingview_chart",
+            "toolbar_bg": isLightMode ? "#ffffff" : "#0b0e14"
+        });
+    }
+
+    /* ========================================================
+       SWITCH ASSET (HEADER TICKER + CHART)
+       ======================================================== */
+    function switchAsset(assetKey) {
+        currentAsset = assetKey;
+        currentChartTVSymbol = assets[assetKey].symbolTV;
+
+        const activeXAU = "px-3 py-0.5 md:px-3 md:py-1 rounded-md bg-gradient-to-r from-yellow-500 to-yellow-400 dark:from-yellow-600 dark:to-yellow-500 text-slate-900 dark:text-white text-[10px] md:text-[11px] font-bold transition-all duration-300 shadow-md transform hover:scale-105 active:scale-95 whitespace-nowrap cursor-pointer";
+        const activeBTC = "px-3 py-0.5 md:px-3 md:py-1 rounded-md bg-gradient-to-r from-orange-500 to-orange-400 dark:from-orange-600 dark:to-orange-500 text-slate-900 dark:text-white text-[10px] md:text-[11px] font-bold transition-all duration-300 shadow-md transform hover:scale-105 active:scale-95 whitespace-nowrap cursor-pointer";
+        const inactive  = "px-3 py-0.5 md:px-3 md:py-1 rounded-md text-slate-600 dark:text-[#787b86] hover:text-slate-900 dark:hover:text-white text-[10px] md:text-[11px] font-bold transition-all duration-300 transform hover:bg-black/5 dark:hover:bg-white/5 hover:scale-105 active:scale-95 whitespace-nowrap cursor-pointer";
+
+        document.getElementById('btn-XAU').className = assetKey==='XAU' ? activeXAU : inactive;
+        document.getElementById('btn-BTC').className = assetKey==='BTC' ? activeBTC : inactive;
+
+        renderFavoriteStar();
+        document.getElementById('custom-ticker-symbol').innerText = assets[assetKey].title;
+        document.getElementById('custom-ticker-price').innerHTML = '<span class="animate-pulse">Memuat...</span>';
+        document.getElementById('custom-ticker-price').className = "bg-gray-200 dark:bg-[#1e222d] text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded-md min-w-[90px] text-center transition-all duration-300 border border-black/5 dark:border-white/5 text-sm font-mono";
+        document.getElementById('custom-ticker-change').innerText = "--";
+        document.getElementById('custom-ticker-change').className = "text-slate-500 dark:text-slate-400 font-semibold text-xs whitespace-nowrap";
+
+        const arrowEl = document.getElementById('price-arrow');
+        arrowEl.innerHTML = '—';
+        arrowEl.style.color = isLightMode ? '#9ca3af' : '#555';
+        arrowEl.style.textShadow = 'none';
+        for (let i = 1; i <= 5; i++) {
+            const b = document.getElementById('mini-bar-' + i);
+            if (b) { b.style.height='6px'; b.style.background=isLightMode?'#d1d5db':'#555'; b.style.boxShadow='none'; }
+        }
+
+        if (targetAlertPrice) clearAlert();
+        checkMarketStatus();
+        initSuperRealtimeData(assetKey);
+
+        document.getElementById('tradingview_chart').innerHTML = '';
+        buildTradingViewWidget(assets[assetKey].symbolTV);
+
+        if (panelOpen) renderPanel();
+    }
+
+    /* ========================================================
+       INIT — tunggu TradingView siap dulu
+       ======================================================== */
+    function waitForTV(cb, n) {
+        n = n || 0;
+        if (typeof TradingView !== 'undefined') { cb(); }
+        else if (n < 80) { setTimeout(function(){ waitForTV(cb, n+1); }, 250); }
+        else { document.getElementById('tradingview_chart').innerHTML = '<div style="color:#ef4444;text-align:center;padding:40px;font-size:14px;">⚠️ Gagal memuat TradingView. Cek koneksi internet lalu refresh halaman.</div>'; }
+    }
+
+    window.addEventListener('DOMContentLoaded', function() {
+        renderFavoriteStar();
+        renderPanel();
+        waitForTV(function() {
+            if (navigator.onLine) {
                 switchAsset('XAU');
-                if(marketCheckInterval) clearInterval(marketCheckInterval);
-                marketCheckInterval=setInterval(checkMarketStatus, 10000);
-            } else {
-                updateConnectionStatus();
+                if (marketCheckInterval) clearInterval(marketCheckInterval);
+                marketCheckInterval = setInterval(checkMarketStatus, 60000);
+                checkMarketStatus();
             }
         });
+    });
     </script>
 </body>
 </html>
